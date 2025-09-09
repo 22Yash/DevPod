@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { Github, Monitor, Rocket, Zap, Eye, Code, ArrowRight, Menu, X , Share2, Settings, Cloud, Terminal, Globe } from 'lucide-react';
+import { Github, Monitor, Rocket, Zap, Eye, Code, ArrowRight, Menu, X, Share2, Settings, Cloud, Terminal, Globe } from 'lucide-react';
 
 const LandingPage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -12,7 +12,7 @@ const LandingPage = () => {
   const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId);
     if (element) {
-      element.scrollIntoView({ 
+      element.scrollIntoView({
         behavior: 'smooth',
         block: 'start'
       });
@@ -20,11 +20,18 @@ const LandingPage = () => {
     setIsMenuOpen(false);
   };
 
+  const handleGitHubLogin = () => {
+    const GITHUB_CLIENT_ID = 'Ov23lia1ACkI4M6uTO34';
+    const redirectUri = 'http://localhost:5173/auth/callback';
+    const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=user:email`;
+    window.location.href = githubAuthUrl;
+  };
+
   // Animation variants
   const fadeInUp = {
     hidden: { opacity: 0, y: 60 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       y: 0,
       transition: { duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }
     }
@@ -46,14 +53,14 @@ const LandingPage = () => {
   return (
     <div className="bg-slate-900 text-white overflow-hidden">
       {/* Navigation */}
-      <motion.nav 
+      <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         className="fixed top-0 w-full z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800"
       >
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <motion.div 
+            <motion.div
               className="flex items-center space-x-2"
               whileHover={{ scale: 1.05 }}
             >
@@ -78,17 +85,19 @@ const LandingPage = () => {
                   {item}
                 </motion.button>
               ))}
-              <motion.button 
+              <motion.button
+                onClick={handleGitHubLogin}
                 className="bg-emerald-500 hover:bg-emerald-400 px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <span>Login</span>
+                <Github className="w-5 h-5" />
+                <span>Login with GitHub</span>
               </motion.button>
             </div>
 
             {/* Mobile Menu Button */}
-            <button 
+            <button
               className="md:hidden"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
@@ -125,9 +134,9 @@ const LandingPage = () => {
       {/* Hero Section */}
       <section id="hero" className="min-h-screen flex items-center relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
-        <motion.div 
+        <motion.div
           className="absolute inset-0 opacity-30"
-          animate={{ 
+          animate={{
             background: [
               'radial-gradient(circle at 20% 50%, rgba(16, 185, 129, 0.3) 0%, transparent 50%)',
               'radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.3) 0%, transparent 50%)',
@@ -136,9 +145,9 @@ const LandingPage = () => {
           }}
           transition={{ duration: 10, repeat: Infinity, repeatType: 'reverse' }}
         />
-        
+
         <div className="max-w-6xl mx-auto px-6 py-20 grid lg:grid-cols-2 gap-12 items-center relative z-10">
-          <motion.div 
+          <motion.div
             className="space-y-8"
             style={{ opacity, scale }}
           >
@@ -148,7 +157,7 @@ const LandingPage = () => {
               variants={stagger}
               className="space-y-6"
             >
-              <motion.h1 
+              <motion.h1
                 variants={fadeInUp}
                 className="text-5xl lg:text-6xl font-bold leading-tight"
               >
@@ -158,15 +167,15 @@ const LandingPage = () => {
                   Your Cloud.
                 </span>
               </motion.h1>
-              
-              <motion.p 
+
+              <motion.p
                 variants={fadeInUp}
                 className="text-xl text-slate-300 leading-relaxed"
               >
                 Skip the installs. Skip the configs. Just code.
               </motion.p>
 
-              <motion.div 
+              <motion.div
                 variants={fadeInUp}
                 className="flex flex-col sm:flex-row gap-4"
               >
@@ -178,7 +187,7 @@ const LandingPage = () => {
                   <Rocket className="w-5 h-5" />
                   <span>Start Coding in 10 Seconds</span>
                 </motion.button>
-                
+
                 <motion.button
                   className="border border-slate-600 hover:border-slate-500 text-slate-300 hover:text-white px-8 py-4 rounded-xl font-semibold flex items-center space-x-2 transition-all"
                   whileHover={scaleOnHover}
@@ -210,10 +219,10 @@ const LandingPage = () => {
                   <span className="text-sm text-gray-300">main.js</span>
                 </div>
               </div>
-              
+
               {/* Code Editor Content */}
               <div className="bg-gray-850 p-6">
-                <motion.div 
+                <motion.div
                   className="font-mono text-sm space-y-3 leading-6"
                   initial="hidden"
                   animate="visible"
@@ -227,7 +236,7 @@ const LandingPage = () => {
                     <span className="text-green-400 ml-2">'react'</span>
                     <span className="text-white">;</span>
                   </motion.div>
-                  
+
                   <motion.div variants={fadeInUp} className="flex items-center">
                     <span className="text-gray-500 mr-4 select-none w-6">2</span>
                     <span className="text-purple-400">import</span>
@@ -236,16 +245,16 @@ const LandingPage = () => {
                     <span className="text-green-400 ml-2">'framer-motion'</span>
                     <span className="text-white">;</span>
                   </motion.div>
-                  
+
                   <motion.div variants={fadeInUp} className="flex items-center">
                     <span className="text-gray-500 mr-4 select-none w-6">3</span>
                   </motion.div>
-                  
+
                   <motion.div variants={fadeInUp} className="flex items-center">
                     <span className="text-gray-500 mr-4 select-none w-6">4</span>
                     <span className="text-gray-500">//</span>
                   </motion.div>
-                  
+
                   <motion.div variants={fadeInUp} className="flex items-center">
                     <span className="text-gray-500 mr-4 select-none w-6">5</span>
                     <span className="text-blue-400">export</span>
@@ -254,41 +263,41 @@ const LandingPage = () => {
                     <span className="text-yellow-400 ml-2">App</span>
                     <span className="text-white">() {'{'}</span>
                   </motion.div>
-                  
+
                   <motion.div variants={fadeInUp} className="flex items-center">
                     <span className="text-gray-500 mr-4 select-none w-6">6</span>
                     <span className="text-blue-400 ml-4">return</span>
                     <span className="text-white ml-2">(</span>
                   </motion.div>
-                  
+
                   <motion.div variants={fadeInUp} className="flex items-center">
                     <span className="text-gray-500 mr-4 select-none w-6">7</span>
                     <span className="text-white ml-8">{'<'}</span>
                     <span className="text-red-400">motion.div</span>
                     <span className="text-white">{'>'}</span>
                   </motion.div>
-                  
+
                   <motion.div variants={fadeInUp} className="flex items-center">
                     <span className="text-gray-500 mr-4 select-none w-6">8</span>
                     <span className="text-white ml-12">Hello DevSpace!</span>
                   </motion.div>
-                  
+
                   <motion.div variants={fadeInUp} className="flex items-center">
                     <span className="text-gray-500 mr-4 select-none w-6">9</span>
                     <span className="text-white ml-8">{'</'}</span>
                     <span className="text-red-400">motion.div</span>
                     <span className="text-white">{'>'}</span>
                   </motion.div>
-                  
+
                   <motion.div variants={fadeInUp} className="flex items-center">
                     <span className="text-gray-500 mr-4 select-none w-6">10</span>
                     <span className="text-white ml-4">);</span>
                   </motion.div>
-                  
+
                   <motion.div variants={fadeInUp} className="flex items-center">
                     <span className="text-gray-500 mr-4 select-none w-6">11</span>
                     <span className="text-white"></span>
-                    <motion.span 
+                    <motion.span
                       className="text-white ml-2"
                       animate={{ opacity: [1, 0] }}
                       transition={{ duration: 1, repeat: Infinity }}
@@ -298,7 +307,7 @@ const LandingPage = () => {
                   </motion.div>
                 </motion.div>
               </div>
-              
+
               {/* Status Bar */}
               <div className="bg-gray-750 px-4 py-2 text-xs text-gray-400 flex justify-between items-center border-t border-gray-700 rounded-b-xl">
                 <div className="flex items-center space-x-4">
@@ -326,17 +335,17 @@ const LandingPage = () => {
             variants={stagger}
             className="text-center mb-16"
           >
-            <motion.h2 
+            <motion.h2
               variants={fadeInUp}
               className="text-4xl lg:text-5xl font-bold mb-6"
             >
               Stop waiting. Start building.
             </motion.h2>
-            <motion.p 
+            <motion.p
               variants={fadeInUp}
               className="text-xl text-slate-300"
             >
-               Everything you need to build, deploy, and collaborate - all in one powerful platform.
+              Everything you need to build, deploy, and collaborate - all in one powerful platform.
             </motion.p>
           </motion.div>
 
@@ -379,153 +388,153 @@ const LandingPage = () => {
             ))}
           </motion.div> */}
 
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={stagger}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          {/* Main Feature - One-click Launch */}
-          <motion.div 
-            variants={fadeInUp}
-            whileHover={{ y: -10, scale: 1.02 }}
-            className="lg:col-span-2 bg-gradient-to-br from-slate-800 to-slate-700 p-8 rounded-3xl border border-slate-600 hover:border-emerald-500/50 transition-all duration-500 relative overflow-hidden"
-          >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full -translate-y-16 translate-x-16"></div>
-            <div className="relative z-10">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center">
-                  <Zap className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-2xl font-bold text-white">One-click Launch</h3>
-              </div>
-              <p className="text-lg text-slate-300 mb-6">
-                Skip the installs. Skip the configs. One click, and you're in your fully pre-configured development environment.
-              </p>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 text-sm text-slate-400">
-                  <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
-                  <span>No downloads required</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-slate-400">
-                  <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
-                  <span>Instant setup</span>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Shareable Workspace */}
           <motion.div
-            variants={fadeInUp}
-            whileHover={{ y: -10, scale: 1.02 }}
-            className="bg-slate-800 p-6 rounded-3xl border border-slate-700 hover:border-blue-500/50 transition-all duration-500 relative overflow-hidden"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={stagger}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
-            <div className="absolute -top-6 -right-6 w-24 h-24 bg-blue-500/10 rounded-full"></div>
-            <div className="relative z-10">
-              <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center mb-4">
-                <Share2 className="w-5 h-5 text-white" />
+            {/* Main Feature - One-click Launch */}
+            <motion.div
+              variants={fadeInUp}
+              whileHover={{ y: -10, scale: 1.02 }}
+              className="lg:col-span-2 bg-gradient-to-br from-slate-800 to-slate-700 p-8 rounded-3xl border border-slate-600 hover:border-emerald-500/50 transition-all duration-500 relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full -translate-y-16 translate-x-16"></div>
+              <div className="relative z-10">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center">
+                    <Zap className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white">One-click Launch</h3>
+                </div>
+                <p className="text-lg text-slate-300 mb-6">
+                  Skip the installs. Skip the configs. One click, and you're in your fully pre-configured development environment.
+                </p>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2 text-sm text-slate-400">
+                    <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
+                    <span>No downloads required</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-sm text-slate-400">
+                    <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
+                    <span>Instant setup</span>
+                  </div>
+                </div>
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-white">Shareable Access</h3>
-              <p className="text-slate-300 text-sm">
-                Share your workspace through unique links. Perfect for collaboration and code reviews.
-              </p>
-            </div>
-          </motion.div>
+            </motion.div>
 
-          {/* Pre-installed Dependencies */}
-          <motion.div
-            variants={fadeInUp}
-            whileHover={{ y: -10, scale: 1.02 }}
-            className="bg-slate-800 p-6 rounded-3xl border border-slate-700 hover:border-purple-500/50 transition-all duration-500 relative overflow-hidden"
-          >
-            <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-purple-500/10 rounded-full"></div>
-            <div className="relative z-10">
-              <div className="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center mb-4">
-                <Settings className="w-5 h-5 text-white" />
+            {/* Shareable Workspace */}
+            <motion.div
+              variants={fadeInUp}
+              whileHover={{ y: -10, scale: 1.02 }}
+              className="bg-slate-800 p-6 rounded-3xl border border-slate-700 hover:border-blue-500/50 transition-all duration-500 relative overflow-hidden"
+            >
+              <div className="absolute -top-6 -right-6 w-24 h-24 bg-blue-500/10 rounded-full"></div>
+              <div className="relative z-10">
+                <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center mb-4">
+                  <Share2 className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3 text-white">Shareable Access</h3>
+                <p className="text-slate-300 text-sm">
+                  Share your workspace through unique links. Perfect for collaboration and code reviews.
+                </p>
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-white">Pre-configured</h3>
-              <p className="text-slate-300 text-sm">
-                Dependencies installed and uniform environment ready for all users from day one.
-              </p>
-            </div>
-          </motion.div>
+            </motion.div>
 
-          {/* Persistent Workspaces */}
-          <motion.div
-            variants={fadeInUp}
-            whileHover={{ y: -10, scale: 1.02 }}
-            className="md:col-span-2 lg:col-span-1 bg-slate-800 p-6 rounded-3xl border border-slate-700 hover:border-orange-500/50 transition-all duration-500 relative overflow-hidden"
-          >
-            <div className="absolute top-0 left-0 w-20 h-20 bg-orange-500/10 rounded-full -translate-x-10 -translate-y-10"></div>
-            <div className="relative z-10">
-              <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center mb-4">
-                <Cloud className="w-5 h-5 text-white" />
+            {/* Pre-installed Dependencies */}
+            <motion.div
+              variants={fadeInUp}
+              whileHover={{ y: -10, scale: 1.02 }}
+              className="bg-slate-800 p-6 rounded-3xl border border-slate-700 hover:border-purple-500/50 transition-all duration-500 relative overflow-hidden"
+            >
+              <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-purple-500/10 rounded-full"></div>
+              <div className="relative z-10">
+                <div className="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center mb-4">
+                  <Settings className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3 text-white">Pre-configured</h3>
+                <p className="text-slate-300 text-sm">
+                  Dependencies installed and uniform environment ready for all users from day one.
+                </p>
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-white">Persistent Storage</h3>
-              <p className="text-slate-300 text-sm mb-4">
-                Your work is saved automatically using Docker volumes. Pick up exactly where you left off.
-              </p>
-              <div className="flex items-center space-x-2 text-xs text-slate-400">
-                <div className="w-1.5 h-1.5 bg-orange-400 rounded-full"></div>
-                <span>Auto-save enabled</span>
-              </div>
-            </div>
-          </motion.div>
+            </motion.div>
 
-          {/* GitHub Integration */}
-          <motion.div
-            variants={fadeInUp}
-            whileHover={{ y: -10, scale: 1.02 }}
-            className="bg-gradient-to-br from-gray-800 to-gray-700 p-6 rounded-3xl border border-slate-700 hover:border-gray-500/50 transition-all duration-500 relative overflow-hidden"
-          >
-            <div className="absolute -top-4 -right-4 w-16 h-16 bg-white/5 rounded-full"></div>
-            <div className="relative z-10">
-              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mb-4">
-                <Github className="w-5 h-5 text-gray-900" />
+            {/* Persistent Workspaces */}
+            <motion.div
+              variants={fadeInUp}
+              whileHover={{ y: -10, scale: 1.02 }}
+              className="md:col-span-2 lg:col-span-1 bg-slate-800 p-6 rounded-3xl border border-slate-700 hover:border-orange-500/50 transition-all duration-500 relative overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-20 h-20 bg-orange-500/10 rounded-full -translate-x-10 -translate-y-10"></div>
+              <div className="relative z-10">
+                <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center mb-4">
+                  <Cloud className="w-5 h-5 text-white" />
+                </div>
+                <h3 className="text-xl font-semibold mb-3 text-white">Persistent Storage</h3>
+                <p className="text-slate-300 text-sm mb-4">
+                  Your work is saved automatically using Docker volumes. Pick up exactly where you left off.
+                </p>
+                <div className="flex items-center space-x-2 text-xs text-slate-400">
+                  <div className="w-1.5 h-1.5 bg-orange-400 rounded-full"></div>
+                  <span>Auto-save enabled</span>
+                </div>
               </div>
-              <h3 className="text-xl font-semibold mb-3 text-white">GitHub Native</h3>
-              <p className="text-slate-300 text-sm">
-                Fork, pull, branch, and merge without ever leaving your workspace.
-              </p>
-            </div>
-          </motion.div>
+            </motion.div>
 
-          {/* Terminal & Preview */}
-          <motion.div
-            variants={fadeInUp}
-            whileHover={{ y: -10, scale: 1.02 }}
-            className="lg:col-span-3 bg-gradient-to-br from-slate-800 to-slate-700 p-8 rounded-3xl border border-slate-600 hover:border-emerald-500/50 transition-all duration-500 relative overflow-hidden"
-          >
-            <div className="absolute bottom-0 left-0 w-40 h-40 bg-emerald-500/5 rounded-full -translate-x-20 translate-y-20"></div>
-            <div className="relative z-10">
-              <div className="flex items-center space-x-4 mb-6">
-                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center">
-                  <Terminal className="w-6 h-6 text-white" />
+            {/* GitHub Integration */}
+            <motion.div
+              variants={fadeInUp}
+              whileHover={{ y: -10, scale: 1.02 }}
+              className="bg-gradient-to-br from-gray-800 to-gray-700 p-6 rounded-3xl border border-slate-700 hover:border-gray-500/50 transition-all duration-500 relative overflow-hidden"
+            >
+              <div className="absolute -top-4 -right-4 w-16 h-16 bg-white/5 rounded-full"></div>
+              <div className="relative z-10">
+                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mb-4">
+                  <Github className="w-5 h-5 text-gray-900" />
                 </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-white">Full Development Suite</h3>
-                  <p className="text-slate-400">Code + Terminal + Preview in one tab</p>
+                <h3 className="text-xl font-semibold mb-3 text-white">GitHub Native</h3>
+                <p className="text-slate-300 text-sm">
+                  Fork, pull, branch, and merge without ever leaving your workspace.
+                </p>
+              </div>
+            </motion.div>
+
+            {/* Terminal & Preview */}
+            <motion.div
+              variants={fadeInUp}
+              whileHover={{ y: -10, scale: 1.02 }}
+              className="lg:col-span-3 bg-gradient-to-br from-slate-800 to-slate-700 p-8 rounded-3xl border border-slate-600 hover:border-emerald-500/50 transition-all duration-500 relative overflow-hidden"
+            >
+              <div className="absolute bottom-0 left-0 w-40 h-40 bg-emerald-500/5 rounded-full -translate-x-20 translate-y-20"></div>
+              <div className="relative z-10">
+                <div className="flex items-center space-x-4 mb-6">
+                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center">
+                    <Terminal className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white">Full Development Suite</h3>
+                    <p className="text-slate-400">Code + Terminal + Preview in one tab</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="flex items-center space-x-2 text-sm text-slate-300">
+                    <Code className="w-4 h-4 text-emerald-400" />
+                    <span>VS Code Editor</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-sm text-slate-300">
+                    <Terminal className="w-4 h-4 text-emerald-400" />
+                    <span>Full Terminal</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-sm text-slate-300">
+                    <Globe className="w-4 h-4 text-emerald-400" />
+                    <span>Live Preview</span>
+                  </div>
                 </div>
               </div>
-              
-              <div className="grid grid-cols-3 gap-4">
-                <div className="flex items-center space-x-2 text-sm text-slate-300">
-                  <Code className="w-4 h-4 text-emerald-400" />
-                  <span>VS Code Editor</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-slate-300">
-                  <Terminal className="w-4 h-4 text-emerald-400" />
-                  <span>Full Terminal</span>
-                </div>
-                <div className="flex items-center space-x-2 text-sm text-slate-300">
-                  <Globe className="w-4 h-4 text-emerald-400" />
-                  <span>Live Preview</span>
-                </div>
-              </div>
-            </div>
-          </motion.div>
+            </motion.div>
           </motion.div>
         </div>
       </section>
@@ -540,13 +549,13 @@ const LandingPage = () => {
             variants={stagger}
             className="text-center mb-16"
           >
-            <motion.h2 
+            <motion.h2
               variants={fadeInUp}
               className="text-4xl lg:text-5xl font-bold mb-6"
             >
               Don't Just Read About It — <span className="text-emerald-400">Try It</span>
             </motion.h2>
-            <motion.p 
+            <motion.p
               variants={fadeInUp}
               className="text-xl text-slate-300"
             >
@@ -578,7 +587,7 @@ const LandingPage = () => {
               </div>
               <div className="flex items-center space-x-2">
                 <span className="text-green-400">$</span>
-                <motion.span 
+                <motion.span
                   className="text-white"
                   animate={{ opacity: [1, 0] }}
                   transition={{ duration: 1, repeat: Infinity }}
@@ -610,13 +619,13 @@ const LandingPage = () => {
             variants={stagger}
             className="text-center mb-16"
           >
-            <motion.h2 
+            <motion.h2
               variants={fadeInUp}
               className="text-4xl lg:text-5xl font-bold mb-6"
             >
               From GitHub to Running App in <span className="text-emerald-400">3 Steps</span>
             </motion.h2>
-            <motion.p 
+            <motion.p
               variants={fadeInUp}
               className="text-xl text-slate-300"
             >
@@ -639,7 +648,7 @@ const LandingPage = () => {
                 description: "Secure OAuth magic in seconds."
               },
               {
-                step: "2", 
+                step: "2",
                 icon: <Monitor className="w-8 h-8" />,
                 title: "Choose Your Start",
                 description: "Pick a prebuild template or start from your repo."
@@ -682,13 +691,13 @@ const LandingPage = () => {
             viewport={{ once: true }}
             variants={stagger}
           >
-            <motion.h2 
+            <motion.h2
               variants={fadeInUp}
               className="text-4xl lg:text-5xl font-bold mb-6"
             >
               You code. We handle the rest.
             </motion.h2>
-            <motion.p 
+            <motion.p
               variants={fadeInUp}
               className="text-xl text-slate-300 mb-8"
             >
@@ -706,7 +715,7 @@ const LandingPage = () => {
                 <Rocket className="w-5 h-5" />
                 <span>Launch My Workspace</span>
               </motion.button>
-              
+
               <motion.button
                 className="border border-slate-600 hover:border-slate-500 text-slate-300 hover:text-white px-8 py-4 rounded-xl font-semibold transition-all"
                 whileHover={scaleOnHover}
@@ -734,7 +743,7 @@ const LandingPage = () => {
                 Your development environment, anywhere.
               </p>
             </div>
-            
+
             <div>
               <h4 className="font-semibold mb-4">Product</h4>
               <div className="space-y-2 text-sm text-slate-400">
@@ -743,7 +752,7 @@ const LandingPage = () => {
                 <div>Templates</div>
               </div>
             </div>
-            
+
             <div>
               <h4 className="font-semibold mb-4">Resources</h4>
               <div className="space-y-2 text-sm text-slate-400">
@@ -752,7 +761,7 @@ const LandingPage = () => {
                 <div>Blog</div>
               </div>
             </div>
-            
+
             <div>
               <h4 className="font-semibold mb-4">Company</h4>
               <div className="space-y-2 text-sm text-slate-400">
@@ -762,7 +771,7 @@ const LandingPage = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="border-t border-slate-800 mt-8 pt-8 text-center text-sm text-slate-400">
             © 2024 DevSpace. All rights reserved.
           </div>
