@@ -1,16 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Github, Monitor, Rocket, Zap, Eye, Code, ArrowRight, Menu, X, 
-  Share2, Settings, Cloud, Terminal, Globe, Plus, Search, Filter,
-  Star, GitBranch, Clock, Users, Play, Trash2, Copy, ExternalLink,
-  FolderOpen, Calendar, Activity
+  Github, Monitor, Rocket, Code, Settings, Plus, Search,
+  Users, Clock, FolderOpen, GitBranch, Share2, Play, Activity
 } from 'lucide-react';
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('workspaces');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [user, setUser] = useState(null);
+
+  // Load user from localStorage
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
 
   // Mock data for workspaces
   const workspaces = [
@@ -147,12 +154,24 @@ const Dashboard = () => {
             </motion.div>
 
             <div className="flex items-center space-x-6">
-              <div className="flex items-center space-x-2 text-sm text-slate-300">
-                <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center">
-                  <span className="text-xs font-semibold">JD</span>
+              {user && (
+                <div className="flex items-center space-x-2 text-sm text-slate-300">
+                  {user.avatar_url ? (
+                    <img
+                      src={user.avatar_url}
+                      alt={user.login}
+                      className="w-8 h-8 rounded-full border border-slate-700"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center">
+                      <span className="text-xs font-semibold">
+                        {user.login ? user.login[0].toUpperCase() : "?"}
+                      </span>
+                    </div>
+                  )}
+                  <span>{user.name || user.login}</span>
                 </div>
-                <span>john.doe@example.com</span>
-              </div>
+              )}
               <button className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
                 <Settings className="w-5 h-5" />
               </button>
@@ -171,7 +190,9 @@ const Dashboard = () => {
         >
           <motion.div variants={fadeInUp} className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Welcome back, John! 👋</h1>
+              <h1 className="text-3xl font-bold mb-2">
+                Welcome back, {user?.name || user?.login || "Developer"} 👋
+              </h1>
               <p className="text-slate-300">Ready to build something amazing today?</p>
             </div>
             <motion.button
@@ -238,6 +259,7 @@ const Dashboard = () => {
 
         {/* Content based on active tab */}
         <AnimatePresence mode="wait">
+          {/* Workspaces Tab */}
           {activeTab === 'workspaces' && (
             <motion.div
               key="workspaces"
@@ -271,7 +293,7 @@ const Dashboard = () => {
 
               {/* Workspaces Grid */}
               <motion.div variants={stagger} className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredWorkspaces.map((workspace, index) => (
+                {filteredWorkspaces.map((workspace) => (
                   <motion.div
                     key={workspace.id}
                     variants={fadeInUp}
@@ -339,6 +361,7 @@ const Dashboard = () => {
             </motion.div>
           )}
 
+          {/* Templates Tab */}
           {activeTab === 'templates' && (
             <motion.div
               key="templates"
@@ -351,7 +374,7 @@ const Dashboard = () => {
               <motion.div variants={fadeInUp} className="mb-8">
                 <h2 className="text-2xl font-bold mb-4">Featured Templates</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {templates.filter(t => t.featured).map((template, index) => (
+                  {templates.filter(t => t.featured).map((template) => (
                     <motion.div
                       key={template.id}
                       variants={fadeInUp}
@@ -394,7 +417,7 @@ const Dashboard = () => {
               <motion.div variants={fadeInUp}>
                 <h2 className="text-2xl font-bold mb-4">All Templates</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {templates.map((template, index) => (
+                  {templates.map((template) => (
                     <motion.div
                       key={template.id}
                       variants={fadeInUp}
@@ -422,6 +445,7 @@ const Dashboard = () => {
             </motion.div>
           )}
 
+          {/* Activity Tab */}
           {activeTab === 'activity' && (
             <motion.div
               key="activity"
