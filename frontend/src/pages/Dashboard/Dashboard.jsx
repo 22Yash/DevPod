@@ -67,8 +67,9 @@ const Dashboard = () => {
       description: 'Modern React development with Vite bundler',
       icon: '⚛️',
       tags: ['Frontend', 'JavaScript', 'React'],
-      uses: 1247,
-      featured: true
+      
+      featured: true,
+      url:'https://stackblitz.com/~/github.com/22Yash/react-template'
     },
     {
       id: 2,
@@ -76,7 +77,7 @@ const Dashboard = () => {
       description: 'Backend API development with Express framework',
       icon: '🟢',
       tags: ['Backend', 'JavaScript', 'API'],
-      uses: 892,
+      
       featured: true
     },
     {
@@ -85,7 +86,7 @@ const Dashboard = () => {
       description: 'High-performance API development with Python',
       icon: '🐍',
       tags: ['Backend', 'Python', 'API'],
-      uses: 634,
+     
       featured: false
     },
     {
@@ -94,7 +95,7 @@ const Dashboard = () => {
       description: 'Complete full-stack application with Next.js',
       icon: '▲',
       tags: ['Full-Stack', 'React', 'SSR'],
-      uses: 567,
+      
       featured: true
     }
   ];
@@ -401,6 +402,7 @@ const Dashboard = () => {
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-slate-400">{template.uses} uses</span>
                         <motion.button
+                          onClick={() => window.open(template.url, "_blank")}
                           className="bg-emerald-500 hover:bg-emerald-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
