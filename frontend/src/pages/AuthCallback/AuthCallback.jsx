@@ -9,7 +9,7 @@ const AuthCallback = () => {
         const authenticateUser = async (code) => {
             try {
                 // Send the code to your backend server
-                const response = await axios.post('http://localhost:4000/api/auth/github', { code });
+                const response = await axios.post('http://localhost:5000/api/auth/github', { code });
 
                 if (response.data.success) {
                     // If successful, store user info and set login status

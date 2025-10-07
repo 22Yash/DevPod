@@ -10,6 +10,7 @@ const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Load user from localStorage
   useEffect(() => {
@@ -19,6 +20,62 @@ const Dashboard = () => {
     }
   }, []);
 
+  // ----------------------------------------------------------------------
+  // API Integration: Launch Workspace - MODIFIED LOGIC HERE
+  // ----------------------------------------------------------------------
+  const launchWorkspace = async (templateName) => {
+    let templateKey;
+    
+    // Map display name to backend's required key
+    if (templateName.includes('Python')) {
+      templateKey = 'python';
+    } else if (templateName.includes('Node.js')) {
+      templateKey = 'nodejs';
+    } else if (templateName.includes('Next.js')) {
+      templateKey = 'nextjs';
+    } else if (templateName.includes('MERN')) { // <--- ADDED MERN KEY MAPPING
+      templateKey = 'mern';
+    } else {
+      alert(`Template ${templateName} is not configured for Docker launch (keys: python, nodejs, nextjs, mern).`);
+      return;
+    }
+
+    setIsLoading(true);
+    console.log(`Launching ${templateKey} workspace via API...`);
+    
+    try {
+      // NOTE: You should use an environment variable (e.g., import.meta.env.VITE_API_URL) 
+      // instead of 'http://localhost:4000' in a real Vite app.
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/workspaces/launch`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add Auth header: 'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ template: templateKey })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const ideUrl = data.ideUrl;
+      
+      console.log(`Workspace ready. Opening: ${ideUrl}`);
+      
+      // Open the new DevPod IDE in a new tab
+      window.open(ideUrl, '_blank');
+
+    } catch (error) {
+      console.error("Failed to launch DevPod:", error);
+      alert("Failed to start your workspace. Check the backend logs on port 4000.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  // ----------------------------------------------------------------------
+  
   // Mock data for workspaces
   const workspaces = [
     {
@@ -59,7 +116,7 @@ const Dashboard = () => {
     }
   ];
 
-  // Mock data for templates
+  // Mock data for templates 
   const templates = [
     {
       id: 1,
@@ -67,35 +124,46 @@ const Dashboard = () => {
       description: 'Modern React development with Vite bundler',
       icon: '⚛️',
       tags: ['Frontend', 'JavaScript', 'React'],
-      uses: 1247,
-      featured: true
+      featured: true,
+      uses: 250,
+      // StackBlitz link for the non-Docker template
+      url:'https://stackblitz.com/~/github.com/22Yash/react-template' 
     },
     {
       id: 2,
-      name: 'Node.js + Express',
+      name: 'Node.js + Express', // Maps to backend 'nodejs'
       description: 'Backend API development with Express framework',
       icon: '🟢',
       tags: ['Backend', 'JavaScript', 'API'],
-      uses: 892,
-      featured: true
+      featured: true,
+      uses: 480
     },
     {
       id: 3,
-      name: 'Python + FastAPI',
+      name: 'Python + FastAPI', // Maps to backend 'python'
       description: 'High-performance API development with Python',
       icon: '🐍',
       tags: ['Backend', 'Python', 'API'],
-      uses: 634,
-      featured: false
+      featured: false,
+      uses: 120
     },
     {
       id: 4,
-      name: 'Next.js Full-Stack',
+      name: 'Next.js Full-Stack', // Maps to backend 'nextjs'
       description: 'Complete full-stack application with Next.js',
       icon: '▲',
       tags: ['Full-Stack', 'React', 'SSR'],
-      uses: 567,
-      featured: true
+      featured: true,
+      uses: 310
+    },
+    {
+      id: 5,
+      name: 'MERN Stack', // <--- NEW MERN TEMPLATE ADDED
+      description: 'MongoDB, Express, React, Node.js environment',
+      icon: '🍃',
+      tags: ['Full-Stack', 'MongoDB', 'React'],
+      featured: false,
+      uses: 150
     }
   ];
 
@@ -128,7 +196,7 @@ const Dashboard = () => {
 
   const filteredWorkspaces = workspaces.filter(workspace => {
     const matchesSearch = workspace.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         workspace.description.toLowerCase().includes(searchQuery.toLowerCase());
+                          workspace.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter = filterType === 'all' || workspace.status === filterType;
     return matchesSearch && matchesFilter;
   });
@@ -196,6 +264,7 @@ const Dashboard = () => {
               <p className="text-slate-300">Ready to build something amazing today?</p>
             </div>
             <motion.button
+              onClick={() => setActiveTab('templates')} // Redirect to templates tab
               className="bg-emerald-500 hover:bg-emerald-400 text-white px-6 py-3 rounded-xl font-semibold flex items-center space-x-2 transition-all"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -268,7 +337,7 @@ const Dashboard = () => {
               exit="hidden"
               variants={stagger}
             >
-              {/* Search and Filter */}
+              {/* Search and Filter... (unchanged) */}
               <motion.div variants={fadeInUp} className="flex flex-col md:flex-row gap-4 mb-6">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -291,7 +360,7 @@ const Dashboard = () => {
                 </select>
               </motion.div>
 
-              {/* Workspaces Grid */}
+              {/* Workspaces Grid... (unchanged) */}
               <motion.div variants={stagger} className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredWorkspaces.map((workspace) => (
                   <motion.div
@@ -335,6 +404,7 @@ const Dashboard = () => {
                       <div className="flex items-center space-x-2">
                         {workspace.status === 'running' ? (
                           <motion.button
+                            // onClick handler for 'Open' workspace
                             className="bg-emerald-500 hover:bg-emerald-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
@@ -343,6 +413,7 @@ const Dashboard = () => {
                           </motion.button>
                         ) : (
                           <motion.button
+                            // onClick handler for 'Start' workspace
                             className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
@@ -401,11 +472,21 @@ const Dashboard = () => {
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-slate-400">{template.uses} uses</span>
                         <motion.button
+                          onClick={() => {
+                              // If it's React/Vite (which has a URL and is the only non-Docker template here), use window.open
+                              if (template.url && template.name === 'React + Vite') {
+                                  window.open(template.url, "_blank");
+                              } else {
+                                  // Use the launchWorkspace logic for all Docker-based templates
+                                  launchWorkspace(template.name);
+                              }
+                            }}
                           className="bg-emerald-500 hover:bg-emerald-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
+                          disabled={isLoading}
                         >
-                          Use Template
+                          {isLoading ? 'Launching...' : 'Use Template'}
                         </motion.button>
                       </div>
                     </motion.div>
@@ -432,11 +513,19 @@ const Dashboard = () => {
                         </div>
                       </div>
                       <motion.button
+                        onClick={() => {
+                            if (template.url && template.name === 'React + Vite') {
+                                window.open(template.url, "_blank");
+                            } else {
+                                launchWorkspace(template.name);
+                            }
+                        }}
                         className="w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg text-sm font-medium transition-all"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
+                        disabled={isLoading}
                       >
-                        Use
+                        {isLoading ? 'Launching...' : 'Use'}
                       </motion.button>
                     </motion.div>
                   ))}
@@ -445,7 +534,7 @@ const Dashboard = () => {
             </motion.div>
           )}
 
-          {/* Activity Tab */}
+          {/* Activity Tab... (unchanged) */}
           {activeTab === 'activity' && (
             <motion.div
               key="activity"
