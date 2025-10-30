@@ -1,28 +1,70 @@
-// backend/src/routes/workspacesRoutes.js
-
 const express = require('express');
 const router = express.Router();
 const dockerService = require('../services/dockerService');
+const Workspace = require('../models/Workspace');
+const Activity = require('../models/Activity');
+const workspaceController = require('../controllers/workspaceController');
+
+// Middleware to check authentication
+const isAuthenticated = (req, res, next) => {
+  if (req.session && req.session.userId) {
+    return next();
+  }
+  res.status(401).json({ error: 'Unauthorized. Please login.' });
+};
+
+// Dashboard and listing routes
+router.get('/dashboard/stats', isAuthenticated, workspaceController.getDashboardStats);
+router.get('/list', isAuthenticated, workspaceController.getWorkspaces);
+router.get('/activity/recent', isAuthenticated, workspaceController.getActivity);
+router.get('/:workspaceId/details', isAuthenticated, workspaceController.getWorkspace);
 
 // --------------------------------------------------------------------------
 // 1. POST /api/v1/workspaces/launch
 // --------------------------------------------------------------------------
-router.post('/launch', async (req, res) => {
-  const { template } = req.body;
-  const userId = 'placeholder-user-123';
+router.post('/launch', isAuthenticated, async (req, res) => {
+  const { template, name, description, repositoryUrl } = req.body;
+  const userId = req.session.userId;
   
   const workspaceId = `${userId}-${Date.now()}`; 
   
   try {
-    // FIXED: Destructure the correct property names
+    // Launch Docker container
     const result = await dockerService.launchWorkspace(userId, template, workspaceId);
+    
+    // Save workspace to database
+    const workspace = await Workspace.create({
+      workspaceId,
+      name: name || `${template}-workspace`,
+      description: description || '',
+      userId,
+      template,
+      status: 'running',
+      containerId: result.containerId,
+      idePort: result.idePort,
+      frontendPort: result.frontendPort,
+      backendPort: result.backendPort,
+      repositoryUrl: repositoryUrl || '',
+      repositoryName: repositoryUrl ? repositoryUrl.split('/').pop().replace('.git', '') : ''
+    });
+
+    // Log activity
+    await Activity.create({
+      userId,
+      workspaceId: workspace._id,
+      action: 'workspace_launched',
+      details: { 
+        template, 
+        containerId: result.containerId,
+        workspaceId 
+      }
+    });
     
     res.status(200).json({ 
       workspaceId, 
       containerId: result.containerId,
       ideUrl: result.ideUrl,
       idePort: result.idePort,
-      // Include MERN-specific URLs if available
       ...(result.frontendUrl && { frontendUrl: result.frontendUrl }),
       ...(result.backendUrl && { backendUrl: result.backendUrl }),
       ...(result.frontendPort && { frontendPort: result.frontendPort }),
@@ -31,7 +73,6 @@ router.post('/launch', async (req, res) => {
     });
   } catch (error) {
     console.error('Launch failed:', error.message);
-    console.error('Stack:', error.stack);
     res.status(500).json({ 
       error: 'Failed to launch container.',
       details: error.message
@@ -42,11 +83,31 @@ router.post('/launch', async (req, res) => {
 // --------------------------------------------------------------------------
 // 2. POST /api/v1/workspaces/:workspaceId/stop
 // --------------------------------------------------------------------------
-router.post('/:workspaceId/stop', async (req, res) => {
+router.post('/:workspaceId/stop', isAuthenticated, async (req, res) => {
   const { workspaceId } = req.params;
   
   try {
+    // Stop Docker container
     await dockerService.stopWorkspace(workspaceId);
+    
+    // Update workspace status in database
+    const workspace = await Workspace.findOneAndUpdate(
+      { workspaceId, userId: req.session.userId },
+      { status: 'stopped' },
+      { new: true }
+    );
+
+    if (!workspace) {
+      return res.status(404).json({ error: 'Workspace not found' });
+    }
+
+    // Log activity
+    await Activity.create({
+      userId: req.session.userId,
+      workspaceId: workspace._id,
+      action: 'workspace_stopped',
+      details: { workspaceId }
+    });
     
     res.json({ message: `Workspace ${workspaceId} stopped.`, workspaceId });
   } catch (error) {
@@ -58,19 +119,40 @@ router.post('/:workspaceId/stop', async (req, res) => {
 // --------------------------------------------------------------------------
 // 3. POST /api/v1/workspaces/:workspaceId/start (Resume)
 // --------------------------------------------------------------------------
-router.post('/:workspaceId/start', async (req, res) => {
+router.post('/:workspaceId/start', isAuthenticated, async (req, res) => {
   const { workspaceId } = req.params;
   
   try {
-    // FIXED: Use correct property names
+    // Resume Docker container
     const result = await dockerService.resumeWorkspace(workspaceId);
+    
+    // Update workspace status in database
+    const workspace = await Workspace.findOneAndUpdate(
+      { workspaceId, userId: req.session.userId },
+      { 
+        status: 'running',
+        lastAccessed: new Date()
+      },
+      { new: true }
+    );
+
+    if (!workspace) {
+      return res.status(404).json({ error: 'Workspace not found' });
+    }
+
+    // Log activity
+    await Activity.create({
+      userId: req.session.userId,
+      workspaceId: workspace._id,
+      action: 'workspace_resumed',
+      details: { workspaceId }
+    });
     
     res.json({ 
       message: `Workspace ${workspaceId} resumed.`, 
       workspaceId, 
       idePort: result.idePort,
       ideUrl: result.ideUrl,
-      // Include MERN-specific URLs if available
       ...(result.frontendUrl && { frontendUrl: result.frontendUrl }),
       ...(result.backendUrl && { backendUrl: result.backendUrl }),
       ...(result.frontendPort && { frontendPort: result.frontendPort }),
@@ -85,11 +167,31 @@ router.post('/:workspaceId/start', async (req, res) => {
 // --------------------------------------------------------------------------
 // 4. DELETE /api/v1/workspaces/:workspaceId
 // --------------------------------------------------------------------------
-router.delete('/:workspaceId', async (req, res) => {
+router.delete('/:workspaceId', isAuthenticated, async (req, res) => {
   const { workspaceId } = req.params;
   
   try {
+    // Delete Docker container
     await dockerService.deleteWorkspace(workspaceId);
+    
+    // Update workspace status (soft delete)
+    const workspace = await Workspace.findOneAndUpdate(
+      { workspaceId, userId: req.session.userId },
+      { status: 'deleted' },
+      { new: true }
+    );
+
+    if (!workspace) {
+      return res.status(404).json({ error: 'Workspace not found' });
+    }
+
+    // Log activity
+    await Activity.create({
+      userId: req.session.userId,
+      workspaceId: workspace._id,
+      action: 'workspace_deleted',
+      details: { workspaceId, name: workspace.name }
+    });
     
     res.json({ message: `Workspace ${workspaceId} successfully deleted.`, workspaceId });
   } catch (error) {
@@ -101,7 +203,7 @@ router.delete('/:workspaceId', async (req, res) => {
 // --------------------------------------------------------------------------
 // 5. POST /api/v1/workspaces/:workspaceId/exec
 // --------------------------------------------------------------------------
-router.post('/:workspaceId/exec', async (req, res) => {
+router.post('/:workspaceId/exec', isAuthenticated, async (req, res) => {
   const { workspaceId } = req.params;
   const { command } = req.body;
   
@@ -111,6 +213,25 @@ router.post('/:workspaceId/exec', async (req, res) => {
   
   try {
     const output = await dockerService.execInContainer(workspaceId, command);
+    
+    // Find workspace for activity logging
+    const workspace = await Workspace.findOne({ 
+      workspaceId, 
+      userId: req.session.userId 
+    });
+
+    if (workspace) {
+      // Log activity
+      await Activity.create({
+        userId: req.session.userId,
+        workspaceId: workspace._id,
+        action: 'command_executed',
+        details: { 
+          workspaceId,
+          command: command.join(' ')
+        }
+      });
+    }
     
     res.json({ 
       message: 'Command executed successfully.', 

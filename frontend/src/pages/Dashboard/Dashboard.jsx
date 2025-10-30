@@ -2,15 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Github, Monitor, Rocket, Code, Settings, Plus, Search,
-  Users, Clock, FolderOpen, GitBranch, Share2, Play, Activity
+  Users, Clock, FolderOpen, GitBranch, Share2, Play, Activity, LogOut
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('workspaces');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [stats, setStats] = useState({
+    activeWorkspaces: 2,
+    totalProjects: 12,
+    collaborators: 6,
+    hoursSaved: 84
+  });
+  const [workspaces, setWorkspaces] = useState([]);
 
   // Load user from localStorage
   useEffect(() => {
@@ -18,11 +27,56 @@ const Dashboard = () => {
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
+    
+    // Load dashboard stats
+    loadDashboardData();
   }, []);
 
-  // ----------------------------------------------------------------------
-  // API Integration: Launch Workspace - MODIFIED LOGIC HERE
-  // ----------------------------------------------------------------------
+  // Load dashboard data from backend
+  const loadDashboardData = async () => {
+    try {
+      // Get dashboard stats
+      const statsResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/workspaces/dashboard/stats`, {
+        credentials: 'include'
+      });
+      
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json();
+        setStats(statsData);
+      }
+
+      // Get workspaces list
+      const workspacesResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/workspaces/list`, {
+        credentials: 'include'
+      });
+      
+      if (workspacesResponse.ok) {
+        const workspacesData = await workspacesResponse.json();
+        setWorkspaces(workspacesData);
+      }
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+      // Keep using mock data if API fails
+    }
+  };
+
+  // Logout function
+  const handleLogout = async () => {
+    try {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      
+      localStorage.removeItem('user');
+      localStorage.removeItem('isLoggedIn');
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  // Launch Workspace function with proper authentication
   const launchWorkspace = async (templateName) => {
     let templateKey;
     
@@ -33,10 +87,10 @@ const Dashboard = () => {
       templateKey = 'nodejs';
     } else if (templateName.includes('Next.js')) {
       templateKey = 'nextjs';
-    } else if (templateName.includes('MERN')) { // <--- ADDED MERN KEY MAPPING
+    } else if (templateName.includes('MERN')) {
       templateKey = 'mern';
     } else {
-      alert(`Template ${templateName} is not configured for Docker launch (keys: python, nodejs, nextjs, mern).`);
+      alert(`Template ${templateName} is not configured.`);
       return;
     }
 
@@ -44,18 +98,25 @@ const Dashboard = () => {
     console.log(`Launching ${templateKey} workspace via API...`);
     
     try {
-      // NOTE: You should use an environment variable (e.g., import.meta.env.VITE_API_URL) 
-      // instead of 'http://localhost:4000' in a real Vite app.
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/workspaces/launch`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Add Auth header: 'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ template: templateKey })
+        credentials: 'include', // ← CRITICAL: Send cookies for authentication
+        body: JSON.stringify({ 
+          template: templateKey,
+          name: `${templateKey}-workspace-${Date.now()}`,
+          description: `Workspace created from ${templateName} template`
+        })
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          alert('Session expired. Please login again.');
+          navigate('/');
+          return;
+        }
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
@@ -64,57 +125,19 @@ const Dashboard = () => {
       
       console.log(`Workspace ready. Opening: ${ideUrl}`);
       
+      // Reload dashboard data to show new workspace
+      await loadDashboardData();
+      
       // Open the new DevPod IDE in a new tab
       window.open(ideUrl, '_blank');
 
     } catch (error) {
       console.error("Failed to launch DevPod:", error);
-      alert("Failed to start your workspace. Check the backend logs on port 4000.");
+      alert("Failed to start your workspace. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
-  // ----------------------------------------------------------------------
-  
-  // Mock data for workspaces
-  const workspaces = [
-    {
-      id: 1,
-      name: 'react-portfolio',
-      description: 'Personal portfolio website built with React and Tailwind',
-      status: 'running',
-      template: 'React + Vite',
-      lastAccessed: '2 hours ago',
-      githubRepo: 'john-doe/react-portfolio',
-      isPublic: false,
-      collaborators: 1,
-      branches: 3
-    },
-    {
-      id: 2,
-      name: 'ecommerce-api',
-      description: 'REST API for ecommerce platform using Node.js and MongoDB',
-      status: 'stopped',
-      template: 'Node.js + Express',
-      lastAccessed: '1 day ago',
-      githubRepo: 'john-doe/ecommerce-api',
-      isPublic: true,
-      collaborators: 3,
-      branches: 7
-    },
-    {
-      id: 3,
-      name: 'ml-experiments',
-      description: 'Machine learning experiments with Python and TensorFlow',
-      status: 'running',
-      template: 'Python + Jupyter',
-      lastAccessed: '5 minutes ago',
-      githubRepo: 'john-doe/ml-experiments',
-      isPublic: false,
-      collaborators: 2,
-      branches: 5
-    }
-  ];
 
   // Mock data for templates 
   const templates = [
@@ -126,12 +149,11 @@ const Dashboard = () => {
       tags: ['Frontend', 'JavaScript', 'React'],
       featured: true,
       uses: 250,
-      // StackBlitz link for the non-Docker template
       url:'https://stackblitz.com/~/github.com/22Yash/react-template' 
     },
     {
       id: 2,
-      name: 'Node.js + Express', // Maps to backend 'nodejs'
+      name: 'Node.js + Express',
       description: 'Backend API development with Express framework',
       icon: '🟢',
       tags: ['Backend', 'JavaScript', 'API'],
@@ -140,7 +162,7 @@ const Dashboard = () => {
     },
     {
       id: 3,
-      name: 'Python + FastAPI', // Maps to backend 'python'
+      name: 'Python + FastAPI',
       description: 'High-performance API development with Python',
       icon: '🐍',
       tags: ['Backend', 'Python', 'API'],
@@ -149,7 +171,7 @@ const Dashboard = () => {
     },
     {
       id: 4,
-      name: 'Next.js Full-Stack', // Maps to backend 'nextjs'
+      name: 'Next.js Full-Stack',
       description: 'Complete full-stack application with Next.js',
       icon: '▲',
       tags: ['Full-Stack', 'React', 'SSR'],
@@ -158,7 +180,7 @@ const Dashboard = () => {
     },
     {
       id: 5,
-      name: 'MERN Stack', // <--- NEW MERN TEMPLATE ADDED
+      name: 'MERN Stack',
       description: 'MongoDB, Express, React, Node.js environment',
       icon: '🍃',
       tags: ['Full-Stack', 'MongoDB', 'React'],
@@ -218,7 +240,7 @@ const Dashboard = () => {
               <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
                 <Code className="w-5 h-5" />
               </div>
-              <span className="text-xl font-bold">devspace</span>
+              <span className="text-xl font-bold">DevPod</span>
             </motion.div>
 
             <div className="flex items-center space-x-6">
@@ -243,6 +265,13 @@ const Dashboard = () => {
               <button className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
                 <Settings className="w-5 h-5" />
               </button>
+              <button 
+                onClick={handleLogout}
+                className="p-2 hover:bg-red-500/10 text-red-400 hover:text-red-300 rounded-lg transition-colors"
+                title="Logout"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
             </div>
           </div>
         </div>
@@ -264,7 +293,7 @@ const Dashboard = () => {
               <p className="text-slate-300">Ready to build something amazing today?</p>
             </div>
             <motion.button
-              onClick={() => setActiveTab('templates')} // Redirect to templates tab
+              onClick={() => setActiveTab('templates')}
               className="bg-emerald-500 hover:bg-emerald-400 text-white px-6 py-3 rounded-xl font-semibold flex items-center space-x-2 transition-all"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -274,13 +303,13 @@ const Dashboard = () => {
             </motion.button>
           </motion.div>
 
-          {/* Stats Cards */}
+          {/* Stats Cards - Now using real data */}
           <motion.div variants={fadeInUp} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             {[
-              { label: 'Active Workspaces', value: '2', icon: <Monitor className="w-5 h-5" />, color: 'emerald' },
-              { label: 'Total Projects', value: '12', icon: <FolderOpen className="w-5 h-5" />, color: 'blue' },
-              { label: 'Collaborators', value: '6', icon: <Users className="w-5 h-5" />, color: 'purple' },
-              { label: 'Hours Saved', value: '84', icon: <Clock className="w-5 h-5" />, color: 'orange' }
+              { label: 'Active Workspaces', value: stats.activeWorkspaces, icon: <Monitor className="w-5 h-5" />, color: 'emerald' },
+              { label: 'Total Projects', value: stats.totalProjects, icon: <FolderOpen className="w-5 h-5" />, color: 'blue' },
+              { label: 'Collaborators', value: stats.collaborators, icon: <Users className="w-5 h-5" />, color: 'purple' },
+              { label: 'Hours Saved', value: stats.hoursSaved, icon: <Clock className="w-5 h-5" />, color: 'orange' }
             ].map((stat, index) => (
               <div key={index} className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
                 <div className="flex items-center justify-between">
@@ -337,7 +366,7 @@ const Dashboard = () => {
               exit="hidden"
               variants={stagger}
             >
-              {/* Search and Filter... (unchanged) */}
+              {/* Search and Filter */}
               <motion.div variants={fadeInUp} className="flex flex-col md:flex-row gap-4 mb-6">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -360,75 +389,93 @@ const Dashboard = () => {
                 </select>
               </motion.div>
 
-              {/* Workspaces Grid... (unchanged) */}
-              <motion.div variants={stagger} className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredWorkspaces.map((workspace) => (
-                  <motion.div
-                    key={workspace.id}
-                    variants={fadeInUp}
-                    whileHover={{ y: -5 }}
-                    className="bg-slate-800 border border-slate-700 rounded-2xl p-6 hover:border-emerald-500/50 transition-all duration-300"
+              {/* Workspaces Grid */}
+              {filteredWorkspaces.length === 0 ? (
+                <motion.div 
+                  variants={fadeInUp}
+                  className="text-center py-12 bg-slate-800 rounded-2xl border border-slate-700"
+                >
+                  <FolderOpen className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">No workspaces yet</h3>
+                  <p className="text-slate-400 mb-6">Create your first workspace to get started</p>
+                  <button
+                    onClick={() => setActiveTab('templates')}
+                    className="bg-emerald-500 hover:bg-emerald-400 text-white px-6 py-3 rounded-lg font-semibold transition-all"
                   >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <h3 className="text-xl font-semibold">{workspace.name}</h3>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(workspace.status)}`}>
-                            {workspace.status}
-                          </span>
+                    Browse Templates
+                  </button>
+                </motion.div>
+              ) : (
+                <motion.div variants={stagger} className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredWorkspaces.map((workspace) => (
+                    <motion.div
+                      key={workspace._id || workspace.id}
+                      variants={fadeInUp}
+                      whileHover={{ y: -5 }}
+                      className="bg-slate-800 border border-slate-700 rounded-2xl p-6 hover:border-emerald-500/50 transition-all duration-300"
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <h3 className="text-xl font-semibold">{workspace.name}</h3>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(workspace.status)}`}>
+                              {workspace.status}
+                            </span>
+                          </div>
+                          <p className="text-slate-400 text-sm mb-3">{workspace.description}</p>
                         </div>
-                        <p className="text-slate-400 text-sm mb-3">{workspace.description}</p>
                       </div>
-                    </div>
 
-                    <div className="flex items-center space-x-4 text-xs text-slate-400 mb-4">
-                      <div className="flex items-center space-x-1">
-                        <Github className="w-4 h-4" />
-                        <span>{workspace.githubRepo}</span>
+                      <div className="flex items-center space-x-4 text-xs text-slate-400 mb-4">
+                        <div className="flex items-center space-x-1">
+                          <Code className="w-4 h-4" />
+                          <span>{workspace.template}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <GitBranch className="w-4 h-4" />
+                          <span>{workspace.branches}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Users className="w-4 h-4" />
+                          <span>{workspace.collaborators?.length || 0}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <GitBranch className="w-4 h-4" />
-                        <span>{workspace.branches}</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <Users className="w-4 h-4" />
-                        <span>{workspace.collaborators}</span>
-                      </div>
-                    </div>
 
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-xs text-slate-500">Last accessed</p>
-                        <p className="text-sm text-slate-300">{workspace.lastAccessed}</p>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-slate-500">Last accessed</p>
+                          <p className="text-sm text-slate-300">
+                            {new Date(workspace.lastAccessed).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {workspace.status === 'running' ? (
+                            <motion.button
+                              onClick={() => window.open(`http://localhost:${workspace.idePort}`, '_blank')}
+                              className="bg-emerald-500 hover:bg-emerald-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              Open
+                            </motion.button>
+                          ) : (
+                            <motion.button
+                              className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              Start
+                            </motion.button>
+                          )}
+                          <button className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all">
+                            <Settings className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        {workspace.status === 'running' ? (
-                          <motion.button
-                            // onClick handler for 'Open' workspace
-                            className="bg-emerald-500 hover:bg-emerald-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            Open
-                          </motion.button>
-                        ) : (
-                          <motion.button
-                            // onClick handler for 'Start' workspace
-                            className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            Start
-                          </motion.button>
-                        )}
-                        <button className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all">
-                          <Settings className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
             </motion.div>
           )}
 
@@ -442,57 +489,7 @@ const Dashboard = () => {
               variants={stagger}
             >
               {/* Featured Templates */}
-              <motion.div variants={fadeInUp} className="mb-8">
-                <h2 className="text-2xl font-bold mb-4">Featured Templates</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {templates.filter(t => t.featured).map((template) => (
-                    <motion.div
-                      key={template.id}
-                      variants={fadeInUp}
-                      whileHover={{ y: -5 }}
-                      className="bg-slate-800 border border-slate-700 rounded-2xl p-6 hover:border-emerald-500/50 transition-all duration-300"
-                    >
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="text-3xl">{template.icon}</div>
-                        <span className="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded-full text-xs font-medium">
-                          Popular
-                        </span>
-                      </div>
-                      <h3 className="text-xl font-semibold mb-2">{template.name}</h3>
-                      <p className="text-slate-400 text-sm mb-4">{template.description}</p>
-                      
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {template.tags.map((tag, i) => (
-                          <span key={i} className="bg-slate-700 text-slate-300 px-2 py-1 rounded-lg text-xs">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-slate-400">{template.uses} uses</span>
-                        <motion.button
-                          onClick={() => {
-                              // If it's React/Vite (which has a URL and is the only non-Docker template here), use window.open
-                              if (template.url && template.name === 'React + Vite') {
-                                  window.open(template.url, "_blank");
-                              } else {
-                                  // Use the launchWorkspace logic for all Docker-based templates
-                                  launchWorkspace(template.name);
-                              }
-                            }}
-                          className="bg-emerald-500 hover:bg-emerald-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          disabled={isLoading}
-                        >
-                          {isLoading ? 'Launching...' : 'Use Template'}
-                        </motion.button>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
+              
 
               {/* All Templates */}
               <motion.div variants={fadeInUp}>
@@ -514,11 +511,11 @@ const Dashboard = () => {
                       </div>
                       <motion.button
                         onClick={() => {
-                            if (template.url && template.name === 'React + Vite') {
-                                window.open(template.url, "_blank");
-                            } else {
-                                launchWorkspace(template.name);
-                            }
+                          if (template.url && template.name === 'React + Vite') {
+                            window.open(template.url, "_blank");
+                          } else {
+                            launchWorkspace(template.name);
+                          }
                         }}
                         className="w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg text-sm font-medium transition-all"
                         whileHover={{ scale: 1.02 }}
@@ -534,7 +531,7 @@ const Dashboard = () => {
             </motion.div>
           )}
 
-          {/* Activity Tab... (unchanged) */}
+          {/* Activity Tab */}
           {activeTab === 'activity' && (
             <motion.div
               key="activity"
@@ -546,25 +543,10 @@ const Dashboard = () => {
               <motion.div variants={fadeInUp} className="bg-slate-800 border border-slate-700 rounded-2xl p-6">
                 <h2 className="text-2xl font-bold mb-6">Recent Activity</h2>
                 <div className="space-y-4">
-                  {[
-                    { action: 'Started workspace', target: 'react-portfolio', time: '2 hours ago', icon: <Play className="w-4 h-4 text-green-400" /> },
-                    { action: 'Committed changes to', target: 'ecommerce-api', time: '1 day ago', icon: <Github className="w-4 h-4 text-blue-400" /> },
-                    { action: 'Created new workspace', target: 'ml-experiments', time: '3 days ago', icon: <Plus className="w-4 h-4 text-emerald-400" /> },
-                    { action: 'Shared workspace', target: 'react-portfolio', time: '1 week ago', icon: <Share2 className="w-4 h-4 text-purple-400" /> }
-                  ].map((activity, index) => (
-                    <div key={index} className="flex items-center space-x-4 p-4 bg-slate-700/50 rounded-xl">
-                      <div className="flex-shrink-0">
-                        {activity.icon}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm">
-                          <span className="text-white">{activity.action}</span>
-                          <span className="text-emerald-400 font-medium ml-1">{activity.target}</span>
-                        </p>
-                        <p className="text-xs text-slate-400">{activity.time}</p>
-                      </div>
-                    </div>
-                  ))}
+                  <div className="text-center py-8 text-slate-400">
+                    <Activity className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>Your recent activity will appear here</p>
+                  </div>
                 </div>
               </motion.div>
             </motion.div>

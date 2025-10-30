@@ -67,7 +67,7 @@ const LandingPage = () => {
               <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
                 <Code className="w-5 h-5" />
               </div>
-              <span className="text-xl font-bold">devspace</span>
+              <span className="text-xl font-bold">DevPod</span>
             </motion.div>
 
             {/* Desktop Navigation */}
@@ -279,7 +279,7 @@ const LandingPage = () => {
 
                   <motion.div variants={fadeInUp} className="flex items-center">
                     <span className="text-gray-500 mr-4 select-none w-6">8</span>
-                    <span className="text-white ml-12">Hello DevSpace!</span>
+                    <span className="text-white ml-12">Hello DevPod!</span>
                   </motion.div>
 
                   <motion.div variants={fadeInUp} className="flex items-center">
@@ -737,7 +737,7 @@ const LandingPage = () => {
                 <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
                   <Code className="w-5 h-5" />
                 </div>
-                <span className="text-xl font-bold">devspace</span>
+                <span className="text-xl font-bold">DevPod</span>
               </div>
               <p className="text-slate-400 text-sm">
                 Your development environment, anywhere.
@@ -773,7 +773,7 @@ const LandingPage = () => {
           </div>
 
           <div className="border-t border-slate-800 mt-8 pt-8 text-center text-sm text-slate-400">
-            © 2024 DevSpace. All rights reserved.
+            © 2024 DevPod. All rights reserved.
           </div>
         </div>
       </footer>
