@@ -80,7 +80,6 @@ const Dashboard = () => {
   };
 
   // Launch Workspace function with proper authentication
-  // NOW ACCEPTS THE TEMPLATE OBJECT
   const launchWorkspace = async (template) => { 
     // Set loading state for this specific template
     setLaunchingTemplateId(template.id); 
@@ -98,11 +97,11 @@ const Dashboard = () => {
       templateKey = 'mern';
     } else {
       alert(`Template ${template.name} is not configured.`);
-      setLaunchingTemplateId(null); // Clear loading state if not configured
+      setLaunchingTemplateId(null);
       return;
     }
 
-    console.log(`Launching ${templateKey} workspace via API...`);
+    console.log(`🚀 Launching ${templateKey} workspace via API...`);
     
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/workspaces/launch`, {
@@ -110,7 +109,7 @@ const Dashboard = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // ← CRITICAL: Send cookies for authentication
+        credentials: 'include', // Send cookies for authentication
         body: JSON.stringify({ 
           template: templateKey,
           name: `${templateKey}-workspace-${Date.now()}`,
@@ -118,19 +117,46 @@ const Dashboard = () => {
         })
       });
 
+      // Parse response
+      const data = await response.json();
+      
       if (!response.ok) {
+        console.error('❌ Launch failed:', response.status, data);
+        
+        // Handle specific error cases
         if (response.status === 401) {
           alert('Session expired. Please login again.');
           navigate('/');
           return;
+        } else if (response.status === 503 && data.message?.includes('Docker')) {
+          alert('Docker is not running. Please start Docker Desktop and try again.');
+          return;
+        } else if (response.status === 502 && data.message?.includes('internet')) {
+          alert('Failed to download required files. Please check your internet connection and try again.');
+          return;
+        } else if (response.status === 400) {
+          alert(`Configuration error: ${data.message || 'Invalid template selected'}`);
+          return;
         }
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        
+        // Generic error message with details
+        const errorMsg = data.message || data.error || `Server error (${response.status})`;
+        alert(`Failed to launch workspace: ${errorMsg}`);
+        return;
       }
 
-      const data = await response.json();
-      const ideUrl = data.ideUrl;
+      // Success case
+      console.log('✅ Workspace launched successfully:', data);
       
-      console.log(`Workspace ready. Opening: ${ideUrl}`);
+      const ideUrl = data.ideUrl;
+      if (!ideUrl) {
+        throw new Error('No IDE URL received from server');
+      }
+      
+      console.log(`🎉 Workspace ready. Opening: ${ideUrl}`);
+      
+      // Show success message
+      alert(`🎉 ${template.name} workspace is ready! Opening in new tab...`);
       
       // Reload dashboard data to show new workspace
       await loadDashboardData();
@@ -139,10 +165,18 @@ const Dashboard = () => {
       window.open(ideUrl, '_blank');
 
     } catch (error) {
-      console.error("Failed to launch DevPod:", error);
-      alert("Failed to start your workspace. Please try again.");
+      console.error("❌ Failed to launch DevPod:", error);
+      
+      // Handle network errors
+      if (error.message.includes('fetch')) {
+        alert("Network error. Please check your connection and try again.");
+      } else if (error.message.includes('IDE URL')) {
+        alert("Workspace created but failed to get access URL. Please check the dashboard.");
+      } else {
+        alert(`Failed to start workspace: ${error.message}`);
+      }
     } finally {
-      // CLEAR loading state after API call, regardless of success or failure
+      // Clear loading state
       setLaunchingTemplateId(null); 
     }
   };

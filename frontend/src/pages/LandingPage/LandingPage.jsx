@@ -20,12 +20,20 @@ const LandingPage = () => {
     setIsMenuOpen(false);
   };
 
-  const handleGitHubLogin = () => {
-    const GITHUB_CLIENT_ID = 'Ov23lia1ACkI4M6uTO34';
-    const redirectUri = 'http://localhost:5173/auth/callback';
-    const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=user:email`;
-    window.location.href = githubAuthUrl;
-  };
+const handleGitHubLogin = () => {
+  const GITHUB_CLIENT_ID = import.meta.env.VITE_GITHUB_CLIENT_ID;
+  const redirectUri = import.meta.env.VITE_GITHUB_CALLBACK_URL || 'http://localhost:5173/auth/callback';
+  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=user:email,repo`;
+  
+  if (!GITHUB_CLIENT_ID) {
+    console.error('GitHub Client ID not configured');
+    alert('GitHub authentication not configured. Please check environment variables.');
+    return;
+  }
+  
+  window.location.href = githubAuthUrl;
+};
+
 
   // Animation variants
   const fadeInUp = {

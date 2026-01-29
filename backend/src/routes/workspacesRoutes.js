@@ -26,11 +26,26 @@ router.post('/launch', isAuthenticated, async (req, res) => {
   const { template, name, description, repositoryUrl } = req.body;
   const userId = req.session.userId;
   
+  console.log(`🚀 Launch request from user ${userId}:`, { template, name });
+  
+  // Validate required fields
+  if (!template) {
+    return res.status(400).json({ 
+      success: false,
+      error: 'Template is required',
+      details: 'Please specify a template (python, nodejs, mern)'
+    });
+  }
+  
   const workspaceId = `${userId}-${Date.now()}`; 
   
   try {
+    console.log(`🔄 Launching Docker container for workspace: ${workspaceId}`);
+    
     // Launch Docker container
     const result = await dockerService.launchWorkspace(userId, template, workspaceId);
+    
+    console.log(`✅ Container launched successfully:`, result);
     
     // Save workspace to database
     const workspace = await Workspace.create({
@@ -48,6 +63,8 @@ router.post('/launch', isAuthenticated, async (req, res) => {
       repositoryName: repositoryUrl ? repositoryUrl.split('/').pop().replace('.git', '') : ''
     });
 
+    console.log(`💾 Workspace saved to database:`, workspace._id);
+
     // Log activity
     await Activity.create({
       userId,
@@ -60,22 +77,61 @@ router.post('/launch', isAuthenticated, async (req, res) => {
       }
     });
     
-    res.status(200).json({ 
+    const response = { 
+      success: true,
       workspaceId, 
       containerId: result.containerId,
       ideUrl: result.ideUrl,
       idePort: result.idePort,
-      ...(result.frontendUrl && { frontendUrl: result.frontendUrl }),
-      ...(result.backendUrl && { backendUrl: result.backendUrl }),
-      ...(result.frontendPort && { frontendPort: result.frontendPort }),
-      ...(result.backendPort && { backendPort: result.backendPort }),
-      message: `Workspace launched successfully`
-    });
+      message: `${template} workspace launched successfully`
+    };
+
+    // Add MERN-specific URLs if applicable
+    if (result.frontendUrl) response.frontendUrl = result.frontendUrl;
+    if (result.backendUrl) response.backendUrl = result.backendUrl;
+    if (result.frontendPort) response.frontendPort = result.frontendPort;
+    if (result.backendPort) response.backendPort = result.backendPort;
+    
+    console.log(`🎉 Launch successful, responding with:`, response);
+    res.status(200).json(response);
+    
   } catch (error) {
-    console.error('Launch failed:', error.message);
-    res.status(500).json({ 
-      error: 'Failed to launch container.',
-      details: error.message
+    console.error(`❌ Launch failed for workspace ${workspaceId}:`, error.message);
+    console.error('Full error:', error);
+    
+    // Provide specific error messages based on error type
+    let statusCode = 500;
+    let errorMessage = 'Failed to launch workspace';
+    let userMessage = 'Something went wrong. Please try again.';
+    
+    if (error.message.includes('Docker is not running')) {
+      statusCode = 503;
+      errorMessage = 'Docker service unavailable';
+      userMessage = 'Docker is not running. Please start Docker Desktop and try again.';
+    } else if (error.message.includes('Template') && error.message.includes('not supported')) {
+      statusCode = 400;
+      errorMessage = 'Invalid template';
+      userMessage = error.message;
+    } else if (error.message.includes('Failed to download')) {
+      statusCode = 502;
+      errorMessage = 'Image download failed';
+      userMessage = 'Failed to download required files. Please check your internet connection.';
+    } else if (error.message.includes('port')) {
+      statusCode = 503;
+      errorMessage = 'Port allocation failed';
+      userMessage = 'No available ports. Please try again in a moment.';
+    } else if (error.message.includes('Unauthorized')) {
+      statusCode = 401;
+      errorMessage = 'Authentication required';
+      userMessage = 'Please log in again.';
+    }
+    
+    res.status(statusCode).json({ 
+      success: false,
+      error: errorMessage,
+      message: userMessage,
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      workspaceId: workspaceId
     });
   }
 });
