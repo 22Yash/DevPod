@@ -6,81 +6,116 @@ const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
 
 async function getGitHubUser(code) {
-  // 1. Exchange code for access token
-  const tokenResponse = await axios.post(
-    "https://github.com/login/oauth/access_token",
-    {
-      client_id: GITHUB_CLIENT_ID,
-      client_secret: GITHUB_CLIENT_SECRET,
-      code,
-    },
-    { headers: { Accept: "application/json" } }
-  );
-
-  const { access_token } = tokenResponse.data;
-  if (!access_token) {
-    throw new Error("Failed to retrieve access token");
+  if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
+    throw new Error("GitHub OAuth credentials not configured");
   }
 
-  // 2. Fetch GitHub user profile
-  const userResponse = await axios.get("https://api.github.com/user", {
-    headers: { Authorization: `token ${access_token}` },
-  });
+  try {
+    console.log('🔄 Exchanging GitHub code for access token...');
+    
+    // 1. Exchange code for access token
+    const tokenResponse = await axios.post(
+      "https://github.com/login/oauth/access_token",
+      {
+        client_id: GITHUB_CLIENT_ID,
+        client_secret: GITHUB_CLIENT_SECRET,
+        code,
+      },
+      { headers: { Accept: "application/json" } }
+    );
 
-  const githubData = userResponse.data;
+    console.log('📝 Token response received:', tokenResponse.data);
 
-  // 3. Find or create user in database
-  let user = await User.findOne({ githubId: githubData.id.toString() });
+    const { access_token, error, error_description } = tokenResponse.data;
+    
+    if (error) {
+      throw new Error(`GitHub OAuth error: ${error_description || error}`);
+    }
+    
+    if (!access_token) {
+      throw new Error("Failed to retrieve access token from GitHub");
+    }
 
-  if (!user) {
-    // Create new user
-    user = await User.create({
-      githubId: githubData.id.toString(),
-      login: githubData.login,
-      name: githubData.name,
-      avatar_url: githubData.avatar_url,
-      email: githubData.email,
-      bio: githubData.bio,
-      location: githubData.location
+    console.log('🔑 Access token obtained successfully');
+
+    // 2. Fetch GitHub user profile
+    const userResponse = await axios.get("https://api.github.com/user", {
+      headers: { Authorization: `token ${access_token}` },
     });
 
-    console.log('✅ New user created:', user.login);
+    const githubData = userResponse.data;
+    console.log('👤 GitHub user data fetched:', githubData.login);
 
-    // Log activity
-    await Activity.create({
-      userId: user._id,
-      action: 'user_login',
-      details: { firstLogin: true }
-    });
-  } else {
-    // Update existing user
-    user.lastLogin = new Date();
-    user.name = githubData.name;
-    user.avatar_url = githubData.avatar_url;
-    user.email = githubData.email;
-    user.bio = githubData.bio;
-    user.location = githubData.location;
-    await user.save();
+    // 3. Find or create user in database
+    let user = await User.findOne({ githubId: githubData.id.toString() });
 
-    console.log('✅ User logged in:', user.login);
+    if (!user) {
+      // Create new user
+      user = await User.create({
+        githubId: githubData.id.toString(),
+        login: githubData.login,
+        name: githubData.name,
+        avatar_url: githubData.avatar_url,
+        email: githubData.email,
+        bio: githubData.bio,
+        location: githubData.location
+      });
 
-    // Log activity
-    await Activity.create({
-      userId: user._id,
-      action: 'user_login',
-      details: { firstLogin: false }
-    });
+      console.log('✅ New user created:', user.login);
+
+      // Log activity
+      await Activity.create({
+        userId: user._id,
+        action: 'user_login',
+        details: { firstLogin: true }
+      });
+    } else {
+      // Update existing user
+      user.lastLogin = new Date();
+      user.name = githubData.name;
+      user.avatar_url = githubData.avatar_url;
+      user.email = githubData.email;
+      user.bio = githubData.bio;
+      user.location = githubData.location;
+      await user.save();
+
+      console.log('✅ User logged in:', user.login);
+
+      // Log activity
+      await Activity.create({
+        userId: user._id,
+        action: 'user_login',
+        details: { firstLogin: false }
+      });
+    }
+
+    // Return user data with MongoDB _id
+    return {
+      _id: user._id,
+      githubId: user.githubId,
+      login: user.login,
+      avatar_url: user.avatar_url,
+      name: user.name,
+      email: user.email
+    };
+
+  } catch (error) {
+    console.error('❌ GitHub OAuth Service Error:', error.message);
+    
+    // Re-throw with more context
+    if (error.response) {
+      // GitHub API error
+      const status = error.response.status;
+      const data = error.response.data;
+      throw new Error(`GitHub API error (${status}): ${data.message || error.message}`);
+    } else if (error.message.includes('OAuth')) {
+      // OAuth specific error
+      throw error;
+    } else {
+      // Database or other error
+      throw new Error(`Authentication service error: ${error.message}`);
+    }
   }
-
-  // Return user data with MongoDB _id
-  return {
-    _id: user._id,
-    githubId: user.githubId,
-    login: user.login,
-    avatar_url: user.avatar_url,
-    name: user.name,
-    email: user.email
-  };
 }
 
 module.exports = { getGitHubUser };

@@ -12,7 +12,8 @@ const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  // NEW STATE: Tracks the ID of the template currently being launched
+  const [launchingTemplateId, setLaunchingTemplateId] = useState(null); 
   const [stats, setStats] = useState({
     activeWorkspaces: 2,
     totalProjects: 12,
@@ -34,6 +35,7 @@ const Dashboard = () => {
 
   // Load dashboard data from backend
   const loadDashboardData = async () => {
+    // ... (Your loadDashboardData function remains the same)
     try {
       // Get dashboard stats
       const statsResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/workspaces/dashboard/stats`, {
@@ -62,6 +64,7 @@ const Dashboard = () => {
 
   // Logout function
   const handleLogout = async () => {
+    // ... (Your handleLogout function remains the same)
     try {
       await fetch(`${import.meta.env.VITE_API_URL}/api/auth/logout`, {
         method: 'POST',
@@ -77,25 +80,28 @@ const Dashboard = () => {
   };
 
   // Launch Workspace function with proper authentication
-  const launchWorkspace = async (templateName) => {
+  const launchWorkspace = async (template) => { 
+    // Set loading state for this specific template
+    setLaunchingTemplateId(template.id); 
+
     let templateKey;
     
     // Map display name to backend's required key
-    if (templateName.includes('Python')) {
+    if (template.name.includes('Python')) {
       templateKey = 'python';
-    } else if (templateName.includes('Node.js')) {
+    } else if (template.name.includes('Node.js')) {
       templateKey = 'nodejs';
-    } else if (templateName.includes('Next.js')) {
+    } else if (template.name.includes('Next.js')) {
       templateKey = 'nextjs';
-    } else if (templateName.includes('MERN')) {
+    } else if (template.name.includes('MERN')) {
       templateKey = 'mern';
     } else {
-      alert(`Template ${templateName} is not configured.`);
+      alert(`Template ${template.name} is not configured.`);
+      setLaunchingTemplateId(null);
       return;
     }
 
-    setIsLoading(true);
-    console.log(`Launching ${templateKey} workspace via API...`);
+    console.log(`🚀 Launching ${templateKey} workspace via API...`);
     
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/workspaces/launch`, {
@@ -103,27 +109,54 @@ const Dashboard = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // ← CRITICAL: Send cookies for authentication
+        credentials: 'include', // Send cookies for authentication
         body: JSON.stringify({ 
           template: templateKey,
           name: `${templateKey}-workspace-${Date.now()}`,
-          description: `Workspace created from ${templateName} template`
+          description: `Workspace created from ${template.name} template`
         })
       });
 
+      // Parse response
+      const data = await response.json();
+      
       if (!response.ok) {
+        console.error('❌ Launch failed:', response.status, data);
+        
+        // Handle specific error cases
         if (response.status === 401) {
           alert('Session expired. Please login again.');
           navigate('/');
           return;
+        } else if (response.status === 503 && data.message?.includes('Docker')) {
+          alert('Docker is not running. Please start Docker Desktop and try again.');
+          return;
+        } else if (response.status === 502 && data.message?.includes('internet')) {
+          alert('Failed to download required files. Please check your internet connection and try again.');
+          return;
+        } else if (response.status === 400) {
+          alert(`Configuration error: ${data.message || 'Invalid template selected'}`);
+          return;
         }
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        
+        // Generic error message with details
+        const errorMsg = data.message || data.error || `Server error (${response.status})`;
+        alert(`Failed to launch workspace: ${errorMsg}`);
+        return;
       }
 
-      const data = await response.json();
-      const ideUrl = data.ideUrl;
+      // Success case
+      console.log('✅ Workspace launched successfully:', data);
       
-      console.log(`Workspace ready. Opening: ${ideUrl}`);
+      const ideUrl = data.ideUrl;
+      if (!ideUrl) {
+        throw new Error('No IDE URL received from server');
+      }
+      
+      console.log(`🎉 Workspace ready. Opening: ${ideUrl}`);
+      
+      // Show success message
+      alert(`🎉 ${template.name} workspace is ready! Opening in new tab...`);
       
       // Reload dashboard data to show new workspace
       await loadDashboardData();
@@ -132,51 +165,32 @@ const Dashboard = () => {
       window.open(ideUrl, '_blank');
 
     } catch (error) {
-      console.error("Failed to launch DevPod:", error);
-      alert("Failed to start your workspace. Please try again.");
+      console.error("❌ Failed to launch DevPod:", error);
+      
+      // Handle network errors
+      if (error.message.includes('fetch')) {
+        alert("Network error. Please check your connection and try again.");
+      } else if (error.message.includes('IDE URL')) {
+        alert("Workspace created but failed to get access URL. Please check the dashboard.");
+      } else {
+        alert(`Failed to start workspace: ${error.message}`);
+      }
     } finally {
-      setIsLoading(false);
+      // Clear loading state
+      setLaunchingTemplateId(null); 
     }
   };
 
   // Mock data for templates 
   const templates = [
     {
-      id: 1,
-      name: 'React + Vite',
-      description: 'Modern React development with Vite bundler',
-      icon: '⚛️',
-      tags: ['Frontend', 'JavaScript', 'React'],
-      featured: true,
-      uses: 250,
-      url:'https://stackblitz.com/~/github.com/22Yash/react-template' 
-    },
-    {
-      id: 2,
-      name: 'Node.js + Express',
-      description: 'Backend API development with Express framework',
-      icon: '🟢',
-      tags: ['Backend', 'JavaScript', 'API'],
-      featured: true,
-      uses: 480
-    },
-    {
       id: 3,
-      name: 'Python + FastAPI',
+      name: 'Python ',
       description: 'High-performance API development with Python',
       icon: '🐍',
       tags: ['Backend', 'Python', 'API'],
       featured: false,
       uses: 120
-    },
-    {
-      id: 4,
-      name: 'Next.js Full-Stack',
-      description: 'Complete full-stack application with Next.js',
-      icon: '▲',
-      tags: ['Full-Stack', 'React', 'SSR'],
-      featured: true,
-      uses: 310
     },
     {
       id: 5,
@@ -185,11 +199,20 @@ const Dashboard = () => {
       icon: '🍃',
       tags: ['Full-Stack', 'MongoDB', 'React'],
       featured: false,
-      uses: 150
-    }
+    },
+    // Adding another template to demonstrate the fix
+    // {
+    //   id: 7,
+    //   name: 'Node.js Backend',
+    //   description: 'Simple Node.js and Express API server',
+    //   icon: '⚙️',
+    //   tags: ['Backend', 'Node.js', 'Express'],
+    //   featured: false,
+    //   uses: 80
+    // }
   ];
 
-  // Animation variants
+  // ... (Your animation variants and utility functions remain the same)
   const fadeInUp = {
     hidden: { opacity: 0, y: 20 },
     visible: { 
@@ -488,44 +511,49 @@ const Dashboard = () => {
               exit="hidden"
               variants={stagger}
             >
-              {/* Featured Templates */}
-              
-
               {/* All Templates */}
               <motion.div variants={fadeInUp}>
                 <h2 className="text-2xl font-bold mb-4">All Templates</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {templates.map((template) => (
-                    <motion.div
-                      key={template.id}
-                      variants={fadeInUp}
-                      whileHover={{ y: -3 }}
-                      className="bg-slate-800 border border-slate-700 rounded-xl p-4 hover:border-slate-600 transition-all duration-300"
-                    >
-                      <div className="flex items-center space-x-3 mb-3">
-                        <span className="text-2xl">{template.icon}</span>
-                        <div>
-                          <h4 className="font-semibold">{template.name}</h4>
-                          <p className="text-xs text-slate-400">{template.uses} uses</p>
-                        </div>
-                      </div>
-                      <motion.button
-                        onClick={() => {
-                          if (template.url && template.name === 'React + Vite') {
-                            window.open(template.url, "_blank");
-                          } else {
-                            launchWorkspace(template.name);
-                          }
-                        }}
-                        className="w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg text-sm font-medium transition-all"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        disabled={isLoading}
+                  {templates.map((template) => {
+                    // Check if this specific template is currently launching
+                    const isTemplateLaunching = launchingTemplateId === template.id;
+
+                    return (
+                      <motion.div
+                        key={template.id}
+                        variants={fadeInUp}
+                        whileHover={{ y: -3 }}
+                        className="bg-slate-800 border border-slate-700 rounded-xl p-4 hover:border-slate-600 transition-all duration-300"
                       >
-                        {isLoading ? 'Launching...' : 'Use'}
-                      </motion.button>
-                    </motion.div>
-                  ))}
+                        <div className="flex items-center space-x-3 mb-3">
+                          <span className="text-2xl">{template.icon}</span>
+                          <div>
+                            <h4 className="font-semibold">{template.name}</h4>
+                            <p className="text-xs text-slate-400">{template.uses} uses</p>
+                          </div>
+                        </div>
+                        <motion.button
+                          onClick={() => {
+                            if (template.url && template.name === 'React + Vite') {
+                              window.open(template.url, "_blank");
+                            } else {
+                              // Pass the full template object to the launch function
+                              launchWorkspace(template); 
+                            }
+                          }}
+                          className="w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg text-sm font-medium transition-all"
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          // Use the specific launching state for the disabled prop
+                          disabled={isTemplateLaunching} 
+                        >
+                          {/* Display the correct text based on the specific template's loading state */}
+                          {isTemplateLaunching ? 'Launching...' : 'Use'}
+                        </motion.button>
+                      </motion.div>
+                    );
+                  })}
                 </div>
               </motion.div>
             </motion.div>
