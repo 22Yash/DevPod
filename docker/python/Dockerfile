@@ -1,12 +1,27 @@
 # Use Alpine Linux for minimal size
 FROM python:3.10-alpine
 
-# Install Git, basic tools, libc6-compat (for glibc binary compatibility), and libstdc++
+# Install Git, basic tools, bash, and other dependencies
 RUN apk add --no-cache \
     git \
     openssh-client \
+    bash \
+    curl \
+    wget \
     libc6-compat \
-    libstdc++
+    libstdc++ \
+    build-base \
+    && ln -sf /bin/bash /bin/sh
+
+# Install common Python packages
+RUN pip install --no-cache-dir \
+    requests \
+    flask \
+    fastapi \
+    uvicorn \
+    pytest \
+    black \
+    flake8
 
 # Install code-server (web-based VS Code)
 RUN wget https://github.com/coder/code-server/releases/download/v4.16.1/code-server-4.16.1-linux-amd64.tar.gz && \
@@ -18,11 +33,21 @@ RUN wget https://github.com/coder/code-server/releases/download/v4.16.1/code-ser
     # Clean up the downloaded tarball
     rm -f code-server-4.16.1-linux-amd64.tar.gz
 
-# Create workspace directory
+# Create workspace directory and set proper permissions
 WORKDIR /workspace
+RUN chmod 755 /workspace
+
+# Copy welcome file
+COPY welcome.py /workspace/welcome.py
+RUN chmod +x /workspace/welcome.py
+
+# Set environment variables for better Python experience
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV SHELL=/bin/bash
 
 # Expose code-server port
 EXPOSE 8080
 
-# Start code-server with no authentication (behind your auth layer)
+# Start code-server with bash as default shell
 CMD ["code-server", "--bind-addr", "0.0.0.0:8080", "--auth", "none", "/workspace"]

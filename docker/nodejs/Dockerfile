@@ -1,6 +1,4 @@
-# docker/nodejs/Dockerfile
-
-# Use a standard Node base image
+# Use a standard Node base image with bash
 FROM node:20-bullseye-slim 
 
 # Set user to root to install packages
@@ -14,6 +12,7 @@ RUN apt-get update && \
     build-essential \
     sudo \
     curl \
+    bash \
     # Clean up
     && rm -rf /var/lib/apt/lists/*
 
@@ -23,6 +22,14 @@ RUN curl -fsSL https://code-server.dev/install.sh | sh
 # Set up the workspace directory
 RUN mkdir /workspace
 WORKDIR /workspace
+
+# Copy welcome file
+COPY welcome.js /workspace/welcome.js
+RUN chmod +x /workspace/welcome.js
+
+# Set environment variables
+ENV SHELL=/bin/bash
+ENV NODE_ENV=development
 
 # Copy your Node.js template files
 # COPY . /workspace 

@@ -46,6 +46,13 @@ const AuthCallback = () => {
         }
 
         const data = await response.json();
+        
+        // Check if authentication actually succeeded
+        if (!data.success || !data.user) {
+          console.error('Authentication failed:', data.error || 'No user data received');
+          throw new Error(data.error || 'Authentication failed - no user data');
+        }
+        
         console.log('✅ Authentication successful:', data.user?.login);
 
         // Store user data in localStorage for quick access
@@ -59,6 +66,10 @@ const AuthCallback = () => {
         navigate('/dashboard');
       } catch (error) {
         console.error('❌ Error during authentication:', error.message);
+        
+        // Clear any partial localStorage data on error
+        localStorage.removeItem('user');
+        localStorage.removeItem('isLoggedIn');
         
         // Show user-friendly error message
         const errorMessage = error.message.includes('fetch') 

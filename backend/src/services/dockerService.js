@@ -7,12 +7,12 @@ let docker;
 
 /**
  * Maps template keys to the corresponding Docker image names.
- * Using real, available Docker images
+ * Using custom Docker images from docker/ folder
  */
 const TEMPLATE_IMAGES = {
-    'python': 'codercom/code-server:latest',
-    'nodejs': 'codercom/code-server:latest',
-    'mern': 'codercom/code-server:latest',
+    'python': 'devpod-python:latest',
+    'nodejs': 'devpod-nodejs:latest', 
+    'mern': 'devpod-mern:latest',
 };
 
 /**
@@ -168,16 +168,44 @@ async function ensureDockerImage(imageName) {
         );
         
         if (!imageExists) {
-            console.log(`📥 Pulling image: ${imageName}`);
+            console.log(`🔨 Building custom image: ${imageName}`);
+            
+            // Build custom Docker image based on template
+            let dockerfilePath;
+            if (imageName.includes('python')) {
+                dockerfilePath = './docker/python';
+            } else if (imageName.includes('nodejs')) {
+                dockerfilePath = './docker/nodejs';
+            } else if (imageName.includes('mern')) {
+                dockerfilePath = './docker/mern';
+            } else {
+                throw new Error(`Unknown template for image: ${imageName}`);
+            }
+            
+            console.log(`🔨 Building from: ${dockerfilePath}`);
+            
+            // Build the image
+            const buildStream = await docker.buildImage({
+                context: dockerfilePath,
+                src: ['.']
+            }, {
+                t: imageName,
+                dockerfile: 'Dockerfile'
+            });
+            
+            // Wait for build to complete
             await new Promise((resolve, reject) => {
-                docker.pull(imageName, (err, stream) => {
-                    if (err) return reject(err);
-                    
-                    docker.modem.followProgress(stream, (err, output) => {
-                        if (err) return reject(err);
-                        console.log(`✅ Image pulled successfully: ${imageName}`);
-                        resolve();
-                    });
+                docker.modem.followProgress(buildStream, (err, output) => {
+                    if (err) {
+                        console.error(`❌ Build failed for ${imageName}:`, err);
+                        return reject(err);
+                    }
+                    console.log(`✅ Image built successfully: ${imageName}`);
+                    resolve();
+                }, (event) => {
+                    if (event.stream) {
+                        console.log(`📦 Build: ${event.stream.trim()}`);
+                    }
                 });
             });
         } else {
@@ -185,7 +213,7 @@ async function ensureDockerImage(imageName) {
         }
     } catch (error) {
         console.error(`❌ Failed to ensure image ${imageName}:`, error.message);
-        throw new Error(`Failed to pull Docker image: ${imageName}. Please check your internet connection.`);
+        throw new Error(`Failed to build Docker image: ${imageName}. Error: ${error.message}`);
     }
 }
 
@@ -268,7 +296,7 @@ async function launchWorkspace(userId, template, workspaceId) {
         console.log(`✅ Container started`);
 
         // Wait a moment for port bindings to be established
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => setTimeout(resolve, 5000));
 
         // Inspect the container to get the randomly assigned host ports
         const info = await container.inspect();

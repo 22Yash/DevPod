@@ -15,6 +15,11 @@ const githubAuth = async (req, res) => {
     
     const user = await githubService.getGitHubUser(code);
     
+    // Only create session if authentication was successful
+    if (!user || !user._id) {
+      throw new Error('Invalid user data received from GitHub service');
+    }
+    
     // Store user in session
     req.session.userId = user._id;
     req.session.user = user;
@@ -29,6 +34,12 @@ const githubAuth = async (req, res) => {
   } catch (error) {
     console.error("❌ GitHub OAuth Error:", error.message);
     
+    // Clear any partial session data on error
+    if (req.session) {
+      req.session.userId = null;
+      req.session.user = null;
+    }
+    
     // Provide more specific error messages
     let errorMessage = "Authentication failed";
     let statusCode = 500;
@@ -40,11 +51,21 @@ const githubAuth = async (req, res) => {
       errorMessage = "Server configuration error";
       statusCode = 500;
     } else if (error.message.includes('GitHub API error')) {
-      errorMessage = "GitHub service unavailable";
+      errorMessage = "GitHub API error - please try again";
       statusCode = 502;
+    } else if (error.message.includes('Authentication service error')) {
+      errorMessage = "Database connection error - please try again";
+      statusCode = 500;
+    } else if (error.message.includes('Invalid user data')) {
+      errorMessage = "Authentication failed - invalid user data";
+      statusCode = 400;
+    } else {
+      errorMessage = `Authentication failed: ${error.message}`;
+      statusCode = 500;
     }
     
     res.status(statusCode).json({ 
+      success: false,
       error: errorMessage,
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });

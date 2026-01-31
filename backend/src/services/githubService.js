@@ -101,16 +101,27 @@ async function getGitHubUser(code) {
 
   } catch (error) {
     console.error('❌ GitHub OAuth Service Error:', error.message);
+    console.error('❌ Full error details:', {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      stack: error.stack
+    });
     
     // Re-throw with more context
     if (error.response) {
       // GitHub API error
       const status = error.response.status;
       const data = error.response.data;
-      throw new Error(`GitHub API error (${status}): ${data.message || error.message}`);
+      console.error(`❌ GitHub API Error ${status}:`, data);
+      throw new Error(`GitHub API error (${status}): ${data.message || data.error_description || error.message}`);
     } else if (error.message.includes('OAuth')) {
       // OAuth specific error
       throw error;
+    } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      // Network error
+      throw new Error(`Network error: Unable to connect to GitHub API`);
     } else {
       // Database or other error
       throw new Error(`Authentication service error: ${error.message}`);
