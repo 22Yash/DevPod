@@ -91,8 +91,6 @@ const Dashboard = () => {
       templateKey = 'python';
     } else if (template.name.includes('Node.js')) {
       templateKey = 'nodejs';
-    } else if (template.name.includes('Next.js')) {
-      templateKey = 'nextjs';
     } else if (template.name.includes('MERN')) {
       templateKey = 'mern';
     } else {
@@ -185,31 +183,31 @@ const Dashboard = () => {
   const templates = [
     {
       id: 3,
-      name: 'Python ',
-      description: 'High-performance API development with Python',
+      name: 'Python Development',
+      description: 'Python environment with code-server IDE',
       icon: '🐍',
       tags: ['Backend', 'Python', 'API'],
       featured: false,
       uses: 120
     },
     {
+      id: 4,
+      name: 'Node.js Backend',
+      description: 'Node.js and Express development environment',
+      icon: '⚙️',
+      tags: ['Backend', 'Node.js', 'Express'],
+      featured: false,
+      uses: 80
+    },
+    {
       id: 5,
       name: 'MERN Stack',
-      description: 'MongoDB, Express, React, Node.js environment',
+      description: 'MongoDB, Express, React, Node.js full-stack environment',
       icon: '🍃',
       tags: ['Full-Stack', 'MongoDB', 'React'],
-      featured: false,
-    },
-    // Adding another template to demonstrate the fix
-    // {
-    //   id: 7,
-    //   name: 'Node.js Backend',
-    //   description: 'Simple Node.js and Express API server',
-    //   icon: '⚙️',
-    //   tags: ['Backend', 'Node.js', 'Express'],
-    //   featured: false,
-    //   uses: 80
-    // }
+      featured: true,
+      uses: 200
+    }
   ];
 
   // ... (Your animation variants and utility functions remain the same)

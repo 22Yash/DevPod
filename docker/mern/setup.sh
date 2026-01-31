@@ -46,15 +46,33 @@ require("dotenv").config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+// Enable CORS for all origins (development)
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
+
 app.use(express.json());
 
 app.get("/api", (req, res) => {
-  res.json({ message: "✅ Backend API is running!" });
+  res.json({ 
+    message: "✅ Backend API is running!",
+    port: PORT,
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get("/api/health", (req, res) => {
+  res.json({ 
+    status: "healthy",
+    service: "MERN Backend",
+    port: PORT
+  });
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Backend server running on http://0.0.0.0:${PORT}`);
+  console.log(`📡 API available at http://localhost:${PORT}/api`);
 });
 EOF
 
@@ -183,29 +201,62 @@ import "./App.css";
 function App() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [backendUrl, setBackendUrl] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:5000/api")
-      .then(res => res.json())
-      .then(data => {
-        setMessage(data.message);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setMessage("❌ Failed to connect to backend");
-        setLoading(false);
-      });
+    // Try multiple backend URLs
+    const tryBackendUrls = [
+      "http://localhost:5000/api",
+      "/api", // Proxy fallback
+      `${window.location.protocol}//${window.location.hostname}:5000/api`
+    ];
+
+    const testBackend = async () => {
+      for (const url of tryBackendUrls) {
+        try {
+          console.log(`🔄 Trying backend at: ${url}`);
+          const response = await fetch(url);
+          const data = await response.json();
+          
+          setMessage(data.message);
+          setBackendUrl(url);
+          setLoading(false);
+          console.log(`✅ Backend connected at: ${url}`);
+          return;
+        } catch (err) {
+          console.log(`❌ Failed to connect to: ${url}`, err.message);
+        }
+      }
+      
+      setMessage("❌ Failed to connect to backend on all URLs");
+      setLoading(false);
+    };
+
+    testBackend();
   }, []);
 
   return (
     <div className="App">
       <h1>🚀 MERN Stack App</h1>
-      <p>{loading ? "Loading..." : message}</p>
+      <div className="status">
+        <p>{loading ? "🔄 Connecting to backend..." : message}</p>
+        {backendUrl && <p className="backend-url">📡 Backend: {backendUrl}</p>}
+      </div>
+      
       <div className="info">
-        <p>✅ Frontend: React + Vite</p>
-        <p>✅ Backend: Express.js</p>
-        <p>✅ Database: MongoDB (configure in backend/.env)</p>
+        <h2>🎯 Development URLs</h2>
+        <div className="url-list">
+          <p>✅ <strong>Frontend (React)</strong>: http://localhost:3000</p>
+          <p>✅ <strong>Backend (Express)</strong>: http://localhost:5000</p>
+          <p>✅ <strong>IDE (Code-Server)</strong>: http://localhost:8080</p>
+        </div>
+        
+        <h2>🛠️ Quick Commands</h2>
+        <div className="commands">
+          <code>npm run dev</code> - Start both servers<br/>
+          <code>npm run dev:backend</code> - Backend only<br/>
+          <code>npm run dev:frontend</code> - Frontend only
+        </div>
       </div>
     </div>
   );
@@ -219,7 +270,7 @@ cat > src/App.css << 'EOF'
 .App {
   text-align: center;
   padding: 2rem;
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
@@ -228,16 +279,63 @@ h1 {
   margin-bottom: 1rem;
 }
 
-.info {
-  margin-top: 2rem;
-  padding: 1rem;
-  background: #f5f5f5;
-  border-radius: 8px;
+h2 {
+  color: #61dafb;
+  margin: 1.5rem 0 1rem 0;
+  font-size: 1.2rem;
 }
 
-.info p {
-  margin: 0.5rem 0;
+.status {
+  margin: 2rem 0;
+  padding: 1rem;
+  background: #1a1a1a;
+  border-radius: 8px;
+  border-left: 4px solid #61dafb;
+}
+
+.backend-url {
+  font-size: 0.9rem;
+  color: #888;
+  margin-top: 0.5rem;
+}
+
+.info {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #f5f5f5;
+  border-radius: 8px;
   color: #333;
+}
+
+.url-list {
+  text-align: left;
+  margin: 1rem 0;
+  background: #fff;
+  padding: 1rem;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+.url-list p {
+  margin: 0.5rem 0;
+  font-family: monospace;
+}
+
+.commands {
+  text-align: left;
+  background: #2d2d2d;
+  color: #fff;
+  padding: 1rem;
+  border-radius: 4px;
+  font-family: monospace;
+  margin-top: 1rem;
+}
+
+.commands code {
+  background: #444;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #61dafb;
 }
 EOF
 
