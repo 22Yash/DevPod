@@ -33,7 +33,7 @@ router.post('/launch', isAuthenticated, async (req, res) => {
     return res.status(400).json({ 
       success: false,
       error: 'Template is required',
-      details: 'Please specify a template (python, nodejs, mern)'
+      details: 'Please specify a template (python, nodejs, mern, java)'
     });
   }
   
