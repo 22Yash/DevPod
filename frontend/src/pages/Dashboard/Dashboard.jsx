@@ -93,6 +93,8 @@ const Dashboard = () => {
       templateKey = 'nodejs';
     } else if (template.name.includes('MERN')) {
       templateKey = 'mern';
+    } else if (template.name.includes('Java')) {
+      templateKey = 'java';
     } else {
       alert(`Template ${template.name} is not configured.`);
       setLaunchingTemplateId(null);
@@ -207,6 +209,15 @@ const Dashboard = () => {
       tags: ['Full-Stack', 'MongoDB', 'React'],
       featured: true,
       uses: 200
+    },
+    {
+      id: 6,
+      name: 'Java Development',
+      description: 'Java 17 with Maven, Gradle, and code-server IDE',
+      icon: '☕',
+      tags: ['Backend', 'Java', 'Maven', 'Gradle'],
+      featured: false,
+      uses: 95
     }
   ];
 
