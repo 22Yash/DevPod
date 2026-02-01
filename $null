@@ -1,0 +1,5 @@
+unknown shorthand flag: 'a' in -a
+
+Usage:  docker rm [OPTIONS] CONTAINER [CONTAINER...]
+
+Run 'docker rm --help' for more information
