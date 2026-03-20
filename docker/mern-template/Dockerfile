@@ -19,14 +19,24 @@ RUN apt-get update && \
 RUN curl -fsSL https://code-server.dev/install.sh | sh && \
     code-server --version
 
+# Install global packages for MERN development
+RUN npm install -g nodemon concurrently
+
 # Set working directory
 WORKDIR /workspace
 
-# Copy entire mern-template contents
-COPY ./mern-template /workspace
+# Copy template files to safe location (survives volume mounts)
+COPY . /template
 
-# Make startup script executable
-RUN chmod +x /workspace/startup.sh
+# Copy template files to workspace for initial setup
+COPY . /workspace
+
+# Make startup script executable in both locations
+RUN chmod +x /template/startup.sh /workspace/startup.sh
+
+# Install root dependencies
+WORKDIR /workspace
+RUN npm install --silent
 
 # Install backend dependencies
 WORKDIR /workspace/backend
@@ -42,5 +52,5 @@ WORKDIR /workspace
 # Expose ports: code-server, frontend dev server, backend API
 EXPOSE 8080 3000 5000
 
-# Use startup.sh as entrypoint
-CMD ["/workspace/startup.sh"]
+# Use startup.sh from template location (survives volume mounts)
+CMD ["/template/startup.sh"]

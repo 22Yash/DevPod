@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "server": "node server.js"
   },
   "keywords": [],
@@ -19,5 +19,9 @@
     "express": "^5.1.0",
     "express-session": "^1.18.2",
     "mongoose": "^8.19.2"
+  },
+  "devDependencies": {
+    "fast-check": "^4.5.3",
+    "jest": "^30.2.0"
   }
 }

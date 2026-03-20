@@ -110,7 +110,7 @@
                 let dockerfilePath;
                 if (imageName.includes('python')) dockerfilePath = './docker/python';
                 else if (imageName.includes('nodejs')) dockerfilePath = './docker/nodejs';
-                else if (imageName.includes('mern')) dockerfilePath = './docker/mern';
+                else if (imageName.includes('mern')) dockerfilePath = './docker/mern-template';
                 else if (imageName.includes('java')) dockerfilePath = './docker/java';
                 else throw new Error(`Unknown template for image: ${imageName}`);
                 

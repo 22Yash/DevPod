@@ -1,0 +1,309 @@
+const Workspace = require('../models/Workspace');
+const ShareSnapshot = require('../models/ShareSnapshot');
+const Activity = require('../models/Activity');
+const shareService = require('../services/shareService');
+const dockerService = require('../services/dockerService');
+
+const shareController = {
+  /**
+   * Create a shareable snapshot of a workspace
+   * POST /api/workspace/:workspaceId/share
+   */
+  createShareLink: async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const { workspaceId } = req.params;
+      const { expiresIn, maxClones } = req.body;
+
+      // Find workspace
+      const workspace = await Workspace.findOne({
+        workspaceId,
+        userId: req.session.userId
+      });
+
+      if (!workspace) {
+        return res.status(404).json({ error: 'Workspace not found' });
+      }
+
+      // Only support Python for now
+      if (workspace.template !== 'python') {
+        return res.status(400).json({ 
+          error: 'Only Python workspaces can be shared currently' 
+        });
+      }
+
+      // Check if workspace is running
+      if (workspace.status !== 'running') {
+        return res.status(400).json({ 
+          error: 'Workspace must be running to create a share link' 
+        });
+      }
+
+      // Create snapshot
+      console.log(`📸 Creating snapshot for workspace: ${workspaceId}`);
+      const snapshot = await shareService.createWorkspaceSnapshot(workspaceId);
+
+      // Check snapshot size (limit to 10MB)
+      if (snapshot.totalSize > 10 * 1024 * 1024) {
+        return res.status(400).json({ 
+          error: 'Workspace is too large to share (max 10MB)' 
+        });
+      }
+
+      // Generate share token
+      const shareToken = shareService.generateShareToken();
+
+      // Calculate expiry
+      let expiresAt = null;
+      if (expiresIn) {
+        expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + parseInt(expiresIn));
+      }
+
+      // Create share snapshot record
+      const shareSnapshot = await ShareSnapshot.create({
+        shareToken,
+        workspaceId,
+        userId: req.session.userId,
+        template: workspace.template,
+        name: workspace.name,
+        description: workspace.description,
+        snapshot,
+        expiresAt,
+        maxClones: maxClones || null
+      });
+
+      // Update workspace
+      workspace.isShared = true;
+      workspace.shareToken = shareToken;
+      await workspace.save();
+
+      // Log activity
+      await Activity.create({
+        userId: req.session.userId,
+        workspaceId: workspace._id,
+        action: 'workspace_shared',
+        details: `Shared workspace: ${workspace.name}`,
+        timestamp: new Date()
+      });
+
+      const shareUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/share/${shareToken}`;
+
+      res.json({
+        success: true,
+        shareUrl,
+        shareToken,
+        expiresAt,
+        maxClones,
+        fileCount: snapshot.files.length,
+        totalSize: snapshot.totalSize
+      });
+
+    } catch (error) {
+      console.error('Error creating share link:', error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  /**
+   * Get share preview (public)
+   * GET /api/share/:shareToken
+   */
+  getSharePreview: async (req, res) => {
+    try {
+      const { shareToken } = req.params;
+
+      const shareSnapshot = await ShareSnapshot.findOne({ shareToken })
+        .populate('userId', 'login avatar_url name');
+
+      if (!shareSnapshot) {
+        return res.status(404).json({ error: 'Share link not found' });
+      }
+
+      // Check if share is valid
+      if (!shareSnapshot.isValid()) {
+        return res.status(403).json({ 
+          error: 'This share link has expired or reached its clone limit' 
+        });
+      }
+
+      // Return preview info (without full file contents)
+      res.json({
+        name: shareSnapshot.name,
+        description: shareSnapshot.description,
+        template: shareSnapshot.template,
+        owner: {
+          name: shareSnapshot.userId.name || shareSnapshot.userId.login,
+          avatar: shareSnapshot.userId.avatar_url
+        },
+        fileCount: shareSnapshot.snapshot.files.length,
+        files: shareSnapshot.snapshot.files.map(f => ({
+          path: f.path,
+          size: f.size
+        })),
+        packages: shareSnapshot.snapshot.packages,
+        cloneCount: shareSnapshot.cloneCount,
+        maxClones: shareSnapshot.maxClones,
+        expiresAt: shareSnapshot.expiresAt,
+        createdAt: shareSnapshot.createdAt
+      });
+
+    } catch (error) {
+      console.error('Error getting share preview:', error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  /**
+   * Clone a shared workspace
+   * POST /api/share/:shareToken/clone
+   */
+  cloneWorkspace: async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: 'You must be logged in to clone a workspace' });
+      }
+
+      const { shareToken } = req.params;
+      const { customName } = req.body;
+
+      // Find share snapshot
+      const shareSnapshot = await ShareSnapshot.findOne({ shareToken });
+
+      if (!shareSnapshot) {
+        return res.status(404).json({ error: 'Share link not found' });
+      }
+
+      // Check if share is valid
+      if (!shareSnapshot.isValid()) {
+        return res.status(403).json({ 
+          error: 'This share link has expired or reached its clone limit' 
+        });
+      }
+
+      // Generate new workspace ID
+      const newWorkspaceId = `${req.session.userId}-${shareSnapshot.template}-${Date.now()}`;
+
+      console.log(`🔄 Cloning workspace from share: ${shareToken}`);
+      console.log(`📦 New workspace ID: ${newWorkspaceId}`);
+
+      // Launch new container
+      const containerInfo = await dockerService.launchWorkspace(
+        req.session.userId,
+        shareSnapshot.template,
+        newWorkspaceId
+      );
+
+      // Wait for container to be ready
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // Restore snapshot to new container
+      await shareService.restoreWorkspaceSnapshot(
+        newWorkspaceId,
+        shareSnapshot.snapshot
+      );
+
+      // Create workspace record
+      const newWorkspace = await Workspace.create({
+        workspaceId: newWorkspaceId,
+        name: customName || `${shareSnapshot.name} (Copy)`,
+        description: shareSnapshot.description,
+        status: 'running',
+        userId: req.session.userId,
+        template: shareSnapshot.template,
+        containerId: containerInfo.containerId,
+        idePort: containerInfo.port,
+        clonedFrom: shareToken
+      });
+
+      // Increment clone count
+      await shareSnapshot.incrementCloneCount();
+
+      // Log activity
+      await Activity.create({
+        userId: req.session.userId,
+        workspaceId: newWorkspace._id,
+        action: 'workspace_cloned',
+        details: `Cloned workspace: ${shareSnapshot.name}`,
+        timestamp: new Date()
+      });
+
+      res.json({
+        success: true,
+        workspace: {
+          workspaceId: newWorkspace.workspaceId,
+          name: newWorkspace.name,
+          template: newWorkspace.template,
+          ideUrl: containerInfo.ideUrl,
+          status: newWorkspace.status
+        },
+        message: 'Workspace cloned successfully!'
+      });
+
+    } catch (error) {
+      console.error('Error cloning workspace:', error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  /**
+   * Revoke share link
+   * DELETE /api/workspace/:workspaceId/share
+   */
+  revokeShareLink: async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const { workspaceId } = req.params;
+
+      const workspace = await Workspace.findOne({
+        workspaceId,
+        userId: req.session.userId
+      });
+
+      if (!workspace) {
+        return res.status(404).json({ error: 'Workspace not found' });
+      }
+
+      if (!workspace.shareToken) {
+        return res.status(400).json({ error: 'Workspace is not shared' });
+      }
+
+      // Deactivate share snapshot
+      await ShareSnapshot.updateOne(
+        { shareToken: workspace.shareToken },
+        { isActive: false }
+      );
+
+      // Update workspace
+      workspace.isShared = false;
+      workspace.shareToken = null;
+      await workspace.save();
+
+      // Log activity
+      await Activity.create({
+        userId: req.session.userId,
+        workspaceId: workspace._id,
+        action: 'share_revoked',
+        details: `Revoked share link for: ${workspace.name}`,
+        timestamp: new Date()
+      });
+
+      res.json({ 
+        success: true,
+        message: 'Share link revoked successfully' 
+      });
+
+    } catch (error) {
+      console.error('Error revoking share link:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+};
+
+module.exports = shareController;
