@@ -23,7 +23,10 @@ const activitySchema = new mongoose.Schema({
       'workspace_deleted',
       'command_executed',
       'collaborator_added',
-      'user_login'
+      'user_login',
+      'workspace_shared',
+      'workspace_cloned',
+      'share_revoked'
     ]
   },
   details: {

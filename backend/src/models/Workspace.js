@@ -46,6 +46,20 @@ const workspaceSchema = new mongoose.Schema({
     default: 1
   },
   
+  // Sharing
+  isShared: {
+    type: Boolean,
+    default: false
+  },
+  shareToken: {
+    type: String,
+    default: null
+  },
+  clonedFrom: {
+    type: String,
+    default: null
+  },
+
   // Collaboration
   collaborators: [{
     type: mongoose.Schema.Types.ObjectId,

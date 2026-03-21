@@ -73,10 +73,12 @@ shareSnapshotSchema.methods.isValid = function() {
   return true;
 };
 
-// Method to increment clone count
+// Method to increment clone count (atomic)
 shareSnapshotSchema.methods.incrementCloneCount = async function() {
-  this.cloneCount += 1;
-  return this.save();
+  return mongoose.model('ShareSnapshot').updateOne(
+    { _id: this._id },
+    { $inc: { cloneCount: 1 } }
+  );
 };
 
 module.exports = mongoose.model('ShareSnapshot', shareSnapshotSchema);

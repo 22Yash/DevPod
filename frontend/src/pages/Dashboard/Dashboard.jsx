@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Github, Monitor, Rocket, Code, Settings, Plus, Search,
-  Users, Clock, FolderOpen, GitBranch, Share2, Play, Activity, LogOut
+import {
+  Monitor, Rocket, Code, Settings, Plus, Search,
+  Users, Clock, FolderOpen, GitBranch, Share2, Play, Activity, LogOut,
+  Square, Trash2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import ShareWorkspaceModal from '../../components/ShareWorkspaceModal';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -12,65 +14,68 @@ const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [user, setUser] = useState(null);
-  // NEW STATE: Tracks the ID of the template currently being launched
-  const [launchingTemplateId, setLaunchingTemplateId] = useState(null); 
+  const [launchingTemplateId, setLaunchingTemplateId] = useState(null);
   const [stats, setStats] = useState({
-    activeWorkspaces: 2,
-    totalProjects: 12,
-    collaborators: 6,
-    hoursSaved: 84
+    activeWorkspaces: 0,
+    totalProjects: 0,
+    collaborators: 0,
+    hoursSaved: 0
   });
   const [workspaces, setWorkspaces] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [actionLoading, setActionLoading] = useState(null);
+  const [shareWorkspace, setShareWorkspace] = useState(null);
 
-  // Load user from localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
-    
-    // Load dashboard stats
     loadDashboardData();
   }, []);
 
-  // Load dashboard data from backend
   const loadDashboardData = async () => {
-    // ... (Your loadDashboardData function remains the same)
     try {
-      // Get dashboard stats
       const statsResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/workspaces/dashboard/stats`, {
         credentials: 'include'
       });
-      
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
         setStats(statsData);
       }
 
-      // Get workspaces list
       const workspacesResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/workspaces/list`, {
         credentials: 'include'
       });
-      
       if (workspacesResponse.ok) {
         const workspacesData = await workspacesResponse.json();
         setWorkspaces(workspacesData);
       }
     } catch (error) {
       console.error('Error loading dashboard data:', error);
-      // Keep using mock data if API fails
     }
   };
 
-  // Logout function
+  const loadActivities = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/workspaces/activity/recent`, {
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setActivities(data);
+      }
+    } catch (error) {
+      console.error('Error loading activities:', error);
+    }
+  };
+
   const handleLogout = async () => {
-    // ... (Your handleLogout function remains the same)
     try {
       await fetch(`${import.meta.env.VITE_API_URL}/api/auth/logout`, {
         method: 'POST',
         credentials: 'include'
       });
-      
       localStorage.removeItem('user');
       localStorage.removeItem('isLoggedIn');
       navigate('/');
@@ -79,164 +84,167 @@ const Dashboard = () => {
     }
   };
 
-  // Launch Workspace function with proper authentication
-  const launchWorkspace = async (template) => { 
-    // Set loading state for this specific template
-    setLaunchingTemplateId(template.id); 
+  const openPendingIdeTab = () => window.open('about:blank', '_blank');
+
+  const navigateToIde = (ideTab, ideUrl) => {
+    if (ideTab && !ideTab.closed) {
+      ideTab.location.href = ideUrl;
+      return;
+    }
+    window.open(ideUrl, '_blank');
+  };
+
+  const closePendingIdeTab = (ideTab) => {
+    if (ideTab && !ideTab.closed) {
+      ideTab.close();
+    }
+  };
+
+  const launchWorkspace = async (template) => {
+    setLaunchingTemplateId(template.id);
 
     let templateKey;
-    
-    // Map display name to backend's required key
-    if (template.name.includes('Python')) {
-      templateKey = 'python';
-    } else if (template.name.includes('Node.js')) {
-      templateKey = 'nodejs';
-    } else if (template.name.includes('MERN')) {
-      templateKey = 'mern';
-    } else if (template.name.includes('Java')) {
-      templateKey = 'java';
-    } else {
+    if (template.name.includes('Python')) templateKey = 'python';
+    else if (template.name.includes('Node.js')) templateKey = 'nodejs';
+    else if (template.name.includes('MERN')) templateKey = 'mern';
+    else if (template.name.includes('Java')) templateKey = 'java';
+    else {
       alert(`Template ${template.name} is not configured.`);
       setLaunchingTemplateId(null);
       return;
     }
 
-    console.log(`🚀 Launching ${templateKey} workspace via API...`);
-    
+    const ideTab = openPendingIdeTab();
+
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/workspaces/launch`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Send cookies for authentication
-        body: JSON.stringify({ 
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
           template: templateKey,
           name: `${templateKey}-workspace-${Date.now()}`,
           description: `Workspace created from ${template.name} template`
         })
       });
 
-      // Parse response
       const data = await response.json();
-      
+
       if (!response.ok) {
-        console.error('❌ Launch failed:', response.status, data);
-        
-        // Handle specific error cases
         if (response.status === 401) {
+          closePendingIdeTab(ideTab);
           alert('Session expired. Please login again.');
           navigate('/');
           return;
-        } else if (response.status === 503 && data.message?.includes('Docker')) {
-          alert('Docker is not running. Please start Docker Desktop and try again.');
-          return;
-        } else if (response.status === 502 && data.message?.includes('internet')) {
-          alert('Failed to download required files. Please check your internet connection and try again.');
-          return;
-        } else if (response.status === 400) {
-          alert(`Configuration error: ${data.message || 'Invalid template selected'}`);
-          return;
         }
-        
-        // Generic error message with details
+        closePendingIdeTab(ideTab);
         const errorMsg = data.message || data.error || `Server error (${response.status})`;
         alert(`Failed to launch workspace: ${errorMsg}`);
         return;
       }
 
-      // Success case
-      console.log('✅ Workspace launched successfully:', data);
-      
       const ideUrl = data.ideUrl;
       if (!ideUrl) {
         throw new Error('No IDE URL received from server');
       }
-      
-      console.log(`🎉 Workspace ready. Opening: ${ideUrl}`);
-      
-      // Show success message
-      alert(`🎉 ${template.name} workspace is ready! Opening in new tab...`);
-      
-      // Reload dashboard data to show new workspace
+
+      navigateToIde(ideTab, ideUrl);
       await loadDashboardData();
-      
-      // Open the new DevPod IDE in a new tab
-      window.open(ideUrl, '_blank');
 
     } catch (error) {
-      console.error("❌ Failed to launch DevPod:", error);
-      
-      // Handle network errors
-      if (error.message.includes('fetch')) {
-        alert("Network error. Please check your connection and try again.");
-      } else if (error.message.includes('IDE URL')) {
-        alert("Workspace created but failed to get access URL. Please check the dashboard.");
-      } else {
-        alert(`Failed to start workspace: ${error.message}`);
-      }
+      closePendingIdeTab(ideTab);
+      console.error("Failed to launch DevPod:", error);
+      alert(`Failed to start workspace: ${error.message}`);
     } finally {
-      // Clear loading state
-      setLaunchingTemplateId(null); 
+      setLaunchingTemplateId(null);
     }
   };
 
-  // Mock data for templates 
-  const templates = [
-    {
-      id: 3,
-      name: 'Python Development',
-      description: 'Python environment with code-server IDE',
-      icon: '🐍',
-      tags: ['Backend', 'Python', 'API'],
-      featured: false,
-      uses: 120
-    },
-    {
-      id: 4,
-      name: 'Node.js Backend',
-      description: 'Node.js and Express development environment',
-      icon: '⚙️',
-      tags: ['Backend', 'Node.js', 'Express'],
-      featured: false,
-      uses: 80
-    },
-    {
-      id: 5,
-      name: 'MERN Stack',
-      description: 'MongoDB, Express, React, Node.js full-stack environment',
-      icon: '🍃',
-      tags: ['Full-Stack', 'MongoDB', 'React'],
-      featured: true,
-      uses: 200
-    },
-    {
-      id: 6,
-      name: 'Java Development',
-      description: 'Java 17 with Maven, Gradle, and code-server IDE',
-      icon: '☕',
-      tags: ['Backend', 'Java', 'Maven', 'Gradle'],
-      featured: false,
-      uses: 95
+  const stopWorkspace = async (workspaceId) => {
+    setActionLoading(workspaceId);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/workspaces/${workspaceId}/stop`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to stop workspace');
+      }
+      await loadDashboardData();
+    } catch (error) {
+      alert(`Failed to stop workspace: ${error.message}`);
+    } finally {
+      setActionLoading(null);
     }
+  };
+
+  const startWorkspace = async (workspaceId) => {
+    setActionLoading(workspaceId);
+    const ideTab = openPendingIdeTab();
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/workspaces/${workspaceId}/start`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to start workspace');
+      }
+      if (!data.ideUrl) {
+        throw new Error('No IDE URL received from server');
+      }
+
+      navigateToIde(ideTab, data.ideUrl);
+      await loadDashboardData();
+    } catch (error) {
+      closePendingIdeTab(ideTab);
+      alert(`Failed to start workspace: ${error.message}`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const deleteWorkspace = async (workspaceId, workspaceName) => {
+    if (!confirm(`Are you sure you want to delete "${workspaceName}"? This cannot be undone.`)) {
+      return;
+    }
+    setActionLoading(workspaceId);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/workspaces/${workspaceId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to delete workspace');
+      }
+      await loadDashboardData();
+    } catch (error) {
+      alert(`Failed to delete workspace: ${error.message}`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const templates = [
+    { id: 3, name: 'Python Development', description: 'Python environment with code-server IDE', icon: '🐍', tags: ['Backend', 'Python', 'API'], uses: 120 },
+    { id: 4, name: 'Node.js Backend', description: 'Node.js and Express development environment', icon: '⚙️', tags: ['Backend', 'Node.js', 'Express'], uses: 80 },
+    { id: 5, name: 'MERN Stack', description: 'MongoDB, Express, React, Node.js full-stack environment', icon: '🍃', tags: ['Full-Stack', 'MongoDB', 'React'], featured: true, uses: 200 },
+    { id: 6, name: 'Java Development', description: 'Java 17 with Maven, Gradle, and code-server IDE', icon: '☕', tags: ['Backend', 'Java', 'Maven', 'Gradle'], uses: 95 }
   ];
 
-  // ... (Your animation variants and utility functions remain the same)
   const fadeInUp = {
     hidden: { opacity: 0, y: 20 },
-    visible: { 
-      opacity: 1, 
-      y: 0,
+    visible: {
+      opacity: 1, y: 0,
       transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }
     }
   };
 
   const stagger = {
-    visible: {
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
+    visible: { transition: { staggerChildren: 0.1 } }
   };
 
   const getStatusColor = (status) => {
@@ -246,6 +254,22 @@ const Dashboard = () => {
       case 'starting': return 'text-yellow-400 bg-yellow-400/10';
       default: return 'text-slate-400 bg-slate-400/10';
     }
+  };
+
+  const formatAction = (action) => {
+    const labels = {
+      workspace_created: 'Created workspace',
+      workspace_launched: 'Launched workspace',
+      workspace_stopped: 'Stopped workspace',
+      workspace_resumed: 'Resumed workspace',
+      workspace_deleted: 'Deleted workspace',
+      workspace_shared: 'Shared workspace',
+      workspace_cloned: 'Cloned workspace',
+      share_revoked: 'Revoked share link',
+      command_executed: 'Executed command',
+      user_login: 'Logged in',
+    };
+    return labels[action] || action;
   };
 
   const filteredWorkspaces = workspaces.filter(workspace => {
@@ -258,17 +282,14 @@ const Dashboard = () => {
   return (
     <div className="bg-slate-900 text-white min-h-screen">
       {/* Navigation */}
-      <motion.nav 
+      <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50"
       >
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <motion.div 
-              className="flex items-center space-x-2"
-              whileHover={{ scale: 1.05 }}
-            >
+            <motion.div className="flex items-center space-x-2" whileHover={{ scale: 1.05 }}>
               <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
                 <Code className="w-5 h-5" />
               </div>
@@ -279,25 +300,16 @@ const Dashboard = () => {
               {user && (
                 <div className="flex items-center space-x-2 text-sm text-slate-300">
                   {user.avatar_url ? (
-                    <img
-                      src={user.avatar_url}
-                      alt={user.login}
-                      className="w-8 h-8 rounded-full border border-slate-700"
-                    />
+                    <img src={user.avatar_url} alt={user.login} className="w-8 h-8 rounded-full border border-slate-700" />
                   ) : (
                     <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center">
-                      <span className="text-xs font-semibold">
-                        {user.login ? user.login[0].toUpperCase() : "?"}
-                      </span>
+                      <span className="text-xs font-semibold">{user.login ? user.login[0].toUpperCase() : "?"}</span>
                     </div>
                   )}
                   <span>{user.name || user.login}</span>
                 </div>
               )}
-              <button className="p-2 hover:bg-slate-800 rounded-lg transition-colors">
-                <Settings className="w-5 h-5" />
-              </button>
-              <button 
+              <button
                 onClick={handleLogout}
                 className="p-2 hover:bg-red-500/10 text-red-400 hover:text-red-300 rounded-lg transition-colors"
                 title="Logout"
@@ -311,12 +323,7 @@ const Dashboard = () => {
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={stagger}
-          className="mb-8"
-        >
+        <motion.div initial="hidden" animate="visible" variants={stagger} className="mb-8">
           <motion.div variants={fadeInUp} className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-3xl font-bold mb-2">
@@ -335,13 +342,13 @@ const Dashboard = () => {
             </motion.button>
           </motion.div>
 
-          {/* Stats Cards - Now using real data */}
+          {/* Stats Cards */}
           <motion.div variants={fadeInUp} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             {[
-              { label: 'Active Workspaces', value: stats.activeWorkspaces, icon: <Monitor className="w-5 h-5" />, color: 'emerald' },
-              { label: 'Total Projects', value: stats.totalProjects, icon: <FolderOpen className="w-5 h-5" />, color: 'blue' },
-              { label: 'Collaborators', value: stats.collaborators, icon: <Users className="w-5 h-5" />, color: 'purple' },
-              { label: 'Hours Saved', value: stats.hoursSaved, icon: <Clock className="w-5 h-5" />, color: 'orange' }
+              { label: 'Active Workspaces', value: stats.activeWorkspaces, icon: <Monitor className="w-5 h-5" />, colorClass: 'text-emerald-400' },
+              { label: 'Total Projects', value: stats.totalProjects, icon: <FolderOpen className="w-5 h-5" />, colorClass: 'text-blue-400' },
+              { label: 'Collaborators', value: stats.collaborators, icon: <Users className="w-5 h-5" />, colorClass: 'text-purple-400' },
+              { label: 'Hours Saved', value: stats.hoursSaved, icon: <Clock className="w-5 h-5" />, colorClass: 'text-orange-400' }
             ].map((stat, index) => (
               <div key={index} className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
                 <div className="flex items-center justify-between">
@@ -349,7 +356,7 @@ const Dashboard = () => {
                     <p className="text-slate-400 text-sm">{stat.label}</p>
                     <p className="text-2xl font-bold mt-1">{stat.value}</p>
                   </div>
-                  <div className={`text-${stat.color}-400`}>
+                  <div className={stat.colorClass}>
                     {stat.icon}
                   </div>
                 </div>
@@ -359,12 +366,7 @@ const Dashboard = () => {
         </motion.div>
 
         {/* Tab Navigation */}
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={fadeInUp}
-          className="mb-8"
-        >
+        <motion.div initial="hidden" animate="visible" variants={fadeInUp} className="mb-8">
           <div className="flex items-center space-x-1 bg-slate-800 p-1 rounded-xl w-fit">
             {[
               { id: 'workspaces', label: 'My Workspaces', icon: <Monitor className="w-4 h-4" /> },
@@ -373,10 +375,13 @@ const Dashboard = () => {
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  if (tab.id === 'activity') loadActivities();
+                }}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
-                  activeTab === tab.id 
-                    ? 'bg-emerald-500 text-white' 
+                  activeTab === tab.id
+                    ? 'bg-emerald-500 text-white'
                     : 'text-slate-400 hover:text-white hover:bg-slate-700'
                 }`}
               >
@@ -391,13 +396,7 @@ const Dashboard = () => {
         <AnimatePresence mode="wait">
           {/* Workspaces Tab */}
           {activeTab === 'workspaces' && (
-            <motion.div
-              key="workspaces"
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-              variants={stagger}
-            >
+            <motion.div key="workspaces" initial="hidden" animate="visible" exit="hidden" variants={stagger}>
               {/* Search and Filter */}
               <motion.div variants={fadeInUp} className="flex flex-col md:flex-row gap-4 mb-6">
                 <div className="relative flex-1">
@@ -423,10 +422,7 @@ const Dashboard = () => {
 
               {/* Workspaces Grid */}
               {filteredWorkspaces.length === 0 ? (
-                <motion.div 
-                  variants={fadeInUp}
-                  className="text-center py-12 bg-slate-800 rounded-2xl border border-slate-700"
-                >
+                <motion.div variants={fadeInUp} className="text-center py-12 bg-slate-800 rounded-2xl border border-slate-700">
                   <FolderOpen className="w-16 h-16 text-slate-600 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold mb-2">No workspaces yet</h3>
                   <p className="text-slate-400 mb-6">Create your first workspace to get started</p>
@@ -439,73 +435,101 @@ const Dashboard = () => {
                 </motion.div>
               ) : (
                 <motion.div variants={stagger} className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {filteredWorkspaces.map((workspace) => (
-                    <motion.div
-                      key={workspace._id || workspace.id}
-                      variants={fadeInUp}
-                      whileHover={{ y: -5 }}
-                      className="bg-slate-800 border border-slate-700 rounded-2xl p-6 hover:border-emerald-500/50 transition-all duration-300"
-                    >
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <h3 className="text-xl font-semibold">{workspace.name}</h3>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(workspace.status)}`}>
-                              {workspace.status}
-                            </span>
+                  {filteredWorkspaces.map((workspace) => {
+                    const isLoading = actionLoading === workspace.workspaceId;
+                    return (
+                      <motion.div
+                        key={workspace._id || workspace.id}
+                        variants={fadeInUp}
+                        whileHover={{ y: -5 }}
+                        className="bg-slate-800 border border-slate-700 rounded-2xl p-6 hover:border-emerald-500/50 transition-all duration-300"
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <h3 className="text-xl font-semibold">{workspace.name}</h3>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(workspace.status)}`}>
+                                {workspace.status}
+                              </span>
+                            </div>
+                            <p className="text-slate-400 text-sm mb-3">{workspace.description}</p>
                           </div>
-                          <p className="text-slate-400 text-sm mb-3">{workspace.description}</p>
                         </div>
-                      </div>
 
-                      <div className="flex items-center space-x-4 text-xs text-slate-400 mb-4">
-                        <div className="flex items-center space-x-1">
-                          <Code className="w-4 h-4" />
-                          <span>{workspace.template}</span>
+                        <div className="flex items-center space-x-4 text-xs text-slate-400 mb-4">
+                          <div className="flex items-center space-x-1">
+                            <Code className="w-4 h-4" />
+                            <span>{workspace.template}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <GitBranch className="w-4 h-4" />
+                            <span>{workspace.branches || 1}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Users className="w-4 h-4" />
+                            <span>{workspace.collaborators?.length || 0}</span>
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-1">
-                          <GitBranch className="w-4 h-4" />
-                          <span>{workspace.branches}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <Users className="w-4 h-4" />
-                          <span>{workspace.collaborators?.length || 0}</span>
-                        </div>
-                      </div>
 
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-xs text-slate-500">Last accessed</p>
-                          <p className="text-sm text-slate-300">
-                            {new Date(workspace.lastAccessed).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          {workspace.status === 'running' ? (
-                            <motion.button
-                              onClick={() => window.open(`http://localhost:${workspace.idePort}`, '_blank')}
-                              className="bg-emerald-500 hover:bg-emerald-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-slate-500">Last accessed</p>
+                            <p className="text-sm text-slate-300">
+                              {new Date(workspace.lastAccessed).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {workspace.status === 'running' ? (
+                              <>
+                                <motion.button
+                                  onClick={() => window.open(`http://localhost:${workspace.idePort}`, '_blank')}
+                                  className="bg-emerald-500 hover:bg-emerald-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                >
+                                  Open
+                                </motion.button>
+                                <button
+                                  onClick={() => setShareWorkspace(workspace)}
+                                  className="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-all"
+                                  title="Share"
+                                >
+                                  <Share2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => stopWorkspace(workspace.workspaceId)}
+                                  disabled={isLoading}
+                                  className="p-2 text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 rounded-lg transition-all disabled:opacity-50"
+                                  title="Stop"
+                                >
+                                  <Square className="w-4 h-4" />
+                                </button>
+                              </>
+                            ) : (
+                              <motion.button
+                                onClick={() => startWorkspace(workspace.workspaceId)}
+                                disabled={isLoading}
+                                className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center space-x-1 disabled:opacity-50"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                <Play className="w-3 h-3" />
+                                <span>{isLoading ? 'Starting...' : 'Start'}</span>
+                              </motion.button>
+                            )}
+                            <button
+                              onClick={() => deleteWorkspace(workspace.workspaceId, workspace.name)}
+                              disabled={isLoading}
+                              className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all disabled:opacity-50"
+                              title="Delete"
                             >
-                              Open
-                            </motion.button>
-                          ) : (
-                            <motion.button
-                              className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                            >
-                              Start
-                            </motion.button>
-                          )}
-                          <button className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-all">
-                            <Settings className="w-4 h-4" />
-                          </button>
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    );
+                  })}
                 </motion.div>
               )}
             </motion.div>
@@ -513,21 +537,12 @@ const Dashboard = () => {
 
           {/* Templates Tab */}
           {activeTab === 'templates' && (
-            <motion.div
-              key="templates"
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-              variants={stagger}
-            >
-              {/* All Templates */}
+            <motion.div key="templates" initial="hidden" animate="visible" exit="hidden" variants={stagger}>
               <motion.div variants={fadeInUp}>
                 <h2 className="text-2xl font-bold mb-4">All Templates</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {templates.map((template) => {
-                    // Check if this specific template is currently launching
                     const isTemplateLaunching = launchingTemplateId === template.id;
-
                     return (
                       <motion.div
                         key={template.id}
@@ -543,21 +558,12 @@ const Dashboard = () => {
                           </div>
                         </div>
                         <motion.button
-                          onClick={() => {
-                            if (template.url && template.name === 'React + Vite') {
-                              window.open(template.url, "_blank");
-                            } else {
-                              // Pass the full template object to the launch function
-                              launchWorkspace(template); 
-                            }
-                          }}
+                          onClick={() => launchWorkspace(template)}
                           className="w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg text-sm font-medium transition-all"
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
-                          // Use the specific launching state for the disabled prop
-                          disabled={isTemplateLaunching} 
+                          disabled={isTemplateLaunching}
                         >
-                          {/* Display the correct text based on the specific template's loading state */}
                           {isTemplateLaunching ? 'Launching...' : 'Use'}
                         </motion.button>
                       </motion.div>
@@ -570,26 +576,47 @@ const Dashboard = () => {
 
           {/* Activity Tab */}
           {activeTab === 'activity' && (
-            <motion.div
-              key="activity"
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-              variants={stagger}
-            >
+            <motion.div key="activity" initial="hidden" animate="visible" exit="hidden" variants={stagger}>
               <motion.div variants={fadeInUp} className="bg-slate-800 border border-slate-700 rounded-2xl p-6">
                 <h2 className="text-2xl font-bold mb-6">Recent Activity</h2>
                 <div className="space-y-4">
-                  <div className="text-center py-8 text-slate-400">
-                    <Activity className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>Your recent activity will appear here</p>
-                  </div>
+                  {activities.length === 0 ? (
+                    <div className="text-center py-8 text-slate-400">
+                      <Activity className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>No activity yet. Launch a workspace to get started!</p>
+                    </div>
+                  ) : (
+                    activities.map((activity) => (
+                      <div key={activity._id} className="flex items-center space-x-4 p-4 bg-slate-700/50 rounded-xl">
+                        <div className="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center">
+                          <Activity className="w-5 h-5 text-emerald-400" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{formatAction(activity.action)}</p>
+                          <p className="text-xs text-slate-400">
+                            {activity.workspaceId?.name || ''}
+                          </p>
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          {new Date(activity.timestamp).toLocaleString()}
+                        </p>
+                      </div>
+                    ))
+                  )}
                 </div>
               </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
+
+      {/* Share Workspace Modal */}
+      {shareWorkspace && (
+        <ShareWorkspaceModal
+          workspace={shareWorkspace}
+          onClose={() => setShareWorkspace(null)}
+        />
+      )}
     </div>
   );
 };

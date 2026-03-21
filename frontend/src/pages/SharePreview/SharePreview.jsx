@@ -9,11 +9,28 @@ export default function SharePreview() {
   const [cloning, setCloning] = useState(false);
   const [shareData, setShareData] = useState(null);
   const [error, setError] = useState('');
+  const [cloneError, setCloneError] = useState('');
   const [customName, setCustomName] = useState('');
 
   useEffect(() => {
     fetchSharePreview();
   }, [shareToken]);
+
+  const openPendingIdeTab = () => window.open('about:blank', '_blank');
+
+  const navigateToIde = (ideTab, ideUrl) => {
+    if (ideTab && !ideTab.closed) {
+      ideTab.location.href = ideUrl;
+      return;
+    }
+    window.open(ideUrl, '_blank');
+  };
+
+  const closePendingIdeTab = (ideTab) => {
+    if (ideTab && !ideTab.closed) {
+      ideTab.close();
+    }
+  };
 
   const fetchSharePreview = async () => {
     try {
@@ -41,7 +58,8 @@ export default function SharePreview() {
 
   const handleClone = async () => {
     setCloning(true);
-    setError('');
+    setCloneError('');
+    const ideTab = openPendingIdeTab();
 
     try {
       const response = await fetch(
@@ -60,20 +78,15 @@ export default function SharePreview() {
         throw new Error(data.error || 'Failed to clone workspace');
       }
 
-      // Open the cloned workspace IDE directly
-      alert('Workspace cloned successfully! Opening your workspace...');
-      
-      // Open IDE in new tab
-      if (data.workspace.ideUrl) {
-        window.open(data.workspace.ideUrl, '_blank');
+      if (!data.workspace?.ideUrl) {
+        throw new Error('No IDE URL received from server');
       }
-      
-      // Redirect to dashboard after a short delay
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1000);
+
+      navigateToIde(ideTab, data.workspace.ideUrl);
+      navigate('/dashboard');
     } catch (err) {
-      setError(err.message);
+      closePendingIdeTab(ideTab);
+      setCloneError(err.message);
       setCloning(false);
     }
   };
@@ -178,7 +191,7 @@ export default function SharePreview() {
 
           {shareData.packages && shareData.packages.length > 0 && (
             <div className="packages-section">
-              <h3>Python Packages</h3>
+              <h3>Packages</h3>
               <div className="packages-list">
                 {shareData.packages.map((pkg, index) => (
                   <span key={index} className="package-badge">
@@ -206,7 +219,7 @@ export default function SharePreview() {
               />
             </div>
 
-            {error && <div className="error-message">{error}</div>}
+            {cloneError && <div className="error-message">{cloneError}</div>}
 
             <button
               onClick={handleClone}

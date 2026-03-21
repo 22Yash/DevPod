@@ -182,11 +182,12 @@ router.post('/:workspaceId/start', isAuthenticated, async (req, res) => {
     // Resume Docker container
     const result = await dockerService.resumeWorkspace(workspaceId);
     
-    // Update workspace status in database
+    // Update workspace status and port in database
     const workspace = await Workspace.findOneAndUpdate(
       { workspaceId, userId: req.session.userId },
-      { 
+      {
         status: 'running',
+        idePort: result.idePort,
         lastAccessed: new Date()
       },
       { new: true }
