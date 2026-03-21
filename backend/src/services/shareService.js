@@ -21,14 +21,14 @@ async function createWorkspaceSnapshot(workspaceId) {
       totalSize: 0
     };
 
-    // Get list of all files in workspace (excluding hidden and cache files)
+    // Get list of all files in workspace (excluding hidden and cache files).
+    // Avoid GNU-specific `find -size` syntax so this also works in Alpine/BusyBox.
     const findCommand = [
       'find', '/workspace',
       '-type', 'f',
       '!', '-path', '*/.*',
       '!', '-path', '*/__pycache__/*',
-      '!', '-path', '*/node_modules/*',
-      '-size', '-1M' // Only files smaller than 1MB
+      '!', '-path', '*/node_modules/*'
     ];
     
     const filesOutput = await dockerService.execInContainer(workspaceId, findCommand);
@@ -39,14 +39,22 @@ async function createWorkspaceSnapshot(workspaceId) {
     // Read each file content
     for (const filePath of filePaths) {
       try {
-        const content = await dockerService.execInContainer(workspaceId, ['cat', filePath]);
-        const size = Buffer.byteLength(content, 'utf8');
-        
-        // Skip files larger than 500KB
+        const sizeOutput = await dockerService.execInContainer(workspaceId, [
+          'sh', '-c', 'wc -c < "$1"', 'sh', filePath
+        ]);
+        const size = parseInt(sizeOutput.trim(), 10);
+
+        if (!Number.isFinite(size)) {
+          throw new Error(`Could not determine file size for ${filePath}`);
+        }
+
+        // Skip files larger than 500KB before reading them into memory
         if (size > 500 * 1024) {
           console.log(`⚠️  Skipping large file: ${filePath} (${size} bytes)`);
           continue;
         }
+
+        const content = await dockerService.execInContainer(workspaceId, ['cat', filePath]);
         
         snapshot.files.push({
           path: filePath.replace('/workspace', ''), // Store relative path
