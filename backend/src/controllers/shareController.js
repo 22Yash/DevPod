@@ -28,10 +28,10 @@ const shareController = {
         return res.status(404).json({ error: 'Workspace not found' });
       }
 
-      // Only support Python for now
+      // Sharing support is only implemented end-to-end for Python workspaces.
       if (workspace.template !== 'python') {
-        return res.status(400).json({ 
-          error: 'Only Python workspaces can be shared currently' 
+        return res.status(400).json({
+          error: 'Only Python workspaces can be shared currently'
         });
       }
 
@@ -215,7 +215,7 @@ const shareController = {
         userId: req.session.userId,
         template: shareSnapshot.template,
         containerId: containerInfo.containerId,
-        idePort: containerInfo.port,
+        idePort: containerInfo.idePort,
         clonedFrom: shareToken
       });
 

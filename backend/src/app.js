@@ -5,6 +5,7 @@ const MongoStore = require("connect-mongo");
 const connectDB = require("./config/database");
 const authRoutes = require("./routes/authRoutes");
 const workspacesRoutes = require('./routes/workspacesRoutes');
+const shareRoutes = require('./routes/share');
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use(session({
 // Routes
 app.use("/api/auth", authRoutes);
 app.use('/api/v1/workspaces', workspacesRoutes);
+app.use('/api', shareRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

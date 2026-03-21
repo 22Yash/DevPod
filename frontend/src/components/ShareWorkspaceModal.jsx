@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
 import './ShareWorkspaceModal.css';
 
 export default function ShareWorkspaceModal({ workspace, onClose }) {

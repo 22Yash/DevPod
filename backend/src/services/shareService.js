@@ -109,11 +109,11 @@ async function restoreWorkspaceSnapshot(workspaceId, snapshot) {
           ]);
         }
         
-        // Write file content (escape single quotes in content)
-        const escapedContent = file.content.replace(/'/g, "'\\''");
+        // Write file content safely using base64 encoding
+        const b64 = Buffer.from(file.content).toString('base64');
         await dockerService.execInContainer(workspaceId, [
           'bash', '-c',
-          `cat > '${fullPath}' << 'EOF'\n${file.content}\nEOF`
+          `echo '${b64}' | base64 -d > '${fullPath}'`
         ]);
         
         console.log(`✅ Restored: ${file.path}`);
@@ -128,11 +128,11 @@ async function restoreWorkspaceSnapshot(workspaceId, snapshot) {
       console.log(`📦 Installing ${snapshot.packages.length} Python packages...`);
       
       try {
-        // Create requirements.txt
-        const requirementsContent = snapshot.packages.join('\n');
+        // Create requirements.txt safely using base64
+        const reqB64 = Buffer.from(snapshot.packages.join('\n')).toString('base64');
         await dockerService.execInContainer(workspaceId, [
           'bash', '-c',
-          `echo '${requirementsContent}' > /workspace/requirements.txt`
+          `echo '${reqB64}' | base64 -d > /workspace/requirements.txt`
         ]);
         
         // Install packages

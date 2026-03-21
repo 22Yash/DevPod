@@ -1,13 +1,14 @@
     // backend/src/services/dockerService.js
 
     const Docker = require('dockerode');
+    const { PassThrough } = require('stream');
 
     let docker;
 
     const TEMPLATE_IMAGES = {
         'python': 'devpod-python:latest',
-        'nodejs': 'devpod-nodejs:latest', 
-        'mern': 'devpod/mern:latest',
+        'nodejs': 'devpod-nodejs:latest',
+        'mern': 'devpod-mern:latest',
         'java': 'devpod-java:latest',
     };
 
@@ -216,7 +217,7 @@
             // Return same structure for ALL templates
             return {
                 containerId: container.id,
-                port: idePort,
+                idePort: idePort,
                 ideUrl: `http://localhost:${idePort}`,
             };
 
@@ -256,8 +257,8 @@
             const info = await container.inspect();
             const idePort = info.NetworkSettings.Ports['8080/tcp'][0].HostPort;
 
-            return { 
-                port: idePort,
+            return {
+                idePort: idePort,
                 ideUrl: `http://localhost:${idePort}`,
             };
         } catch (error) {
@@ -308,15 +309,52 @@
                 Cmd: cmd,
                 AttachStdout: true,
                 AttachStderr: true,
+                // Callers parse stdout as raw data (paths, file contents), so avoid PTY formatting.
+                Tty: false,
             });
-            
+
             const stream = await exec.start({ hijack: true, stdin: false });
-            
+
             return new Promise((resolve, reject) => {
-                let output = '';
-                stream.on('data', (chunk) => { output += chunk.toString(); });
-                stream.on('end', () => { resolve(output); });
-                stream.on('error', reject);
+                let stdout = '';
+                let stderr = '';
+                const stdoutStream = new PassThrough();
+                const stderrStream = new PassThrough();
+                let settled = false;
+
+                const rejectOnce = (error) => {
+                    if (settled) return;
+                    settled = true;
+                    reject(error);
+                };
+
+                const finalize = async () => {
+                    if (settled) return;
+
+                    try {
+                        const { ExitCode } = await exec.inspect();
+                        if (ExitCode !== 0) {
+                            const message = stderr.trim() || stdout.trim() || `Command exited with code ${ExitCode}`;
+                            return rejectOnce(new Error(message));
+                        }
+
+                        settled = true;
+                        resolve(stdout);
+                    } catch (error) {
+                        rejectOnce(error);
+                    }
+                };
+
+                // Strip the 8-byte multiplex headers so we get clean output
+                docker.modem.demuxStream(stream, stdoutStream, stderrStream);
+
+                stdoutStream.on('data', (chunk) => { stdout += chunk.toString(); });
+                stderrStream.on('data', (chunk) => { stderr += chunk.toString(); });
+                stdoutStream.on('error', rejectOnce);
+                stderrStream.on('error', rejectOnce);
+                stream.on('end', () => { void finalize(); });
+                stream.on('close', () => { void finalize(); });
+                stream.on('error', rejectOnce);
             });
         } catch (error) {
             console.error(`❌ Failed to execute command in ${workspaceId}:`, error.message);
