@@ -1,17 +1,17 @@
-# Use Alpine Linux for minimal size
-FROM python:3.10-alpine
+# Use Debian-based Python image (more reliable than Alpine)
+FROM python:3.10-slim-bullseye
 
 # Install Git, basic tools, bash, and other dependencies
-RUN apk add --no-cache \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     git \
     openssh-client \
     bash \
     curl \
     wget \
-    libc6-compat \
-    libstdc++ \
-    build-base \
-    && ln -sf /bin/bash /bin/sh
+    build-essential \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install common Python packages
 RUN pip install --no-cache-dir \
