@@ -1,0 +1,202 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                        NETWORK TIMEOUT - VISUAL GUIDE                     ║
+║                              QUICK SOLUTIONS                              ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+┌─ PROBLEM ──────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  Error: Connection timed out [IP: 151.101.66.132 80]                      │
+│  Error: E: Failed to fetch http://deb.debian.org/debian-security/...      │
+│  Error: E: Unable to fetch some archives                                  │
+│                                                                             │
+│  Cause: Network connection too slow to download packages                  │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ SOLUTION 1: RESTART DOCKER (FASTEST) ─────────────────────────────────────┐
+│                                                                             │
+│  Step 1: Close Docker Desktop                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐  │
+│  │ Right-click Docker icon in system tray (bottom right)              │  │
+│  │ Click "Quit Docker Desktop"                                        │  │
+│  │ Wait 10 seconds                                                    │  │
+│  └─────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+│  Step 2: Reopen Docker Desktop                                            │
+│  ┌─────────────────────────────────────────────────────────────────────┐  │
+│  │ Click Windows Start                                                │  │
+│  │ Search "Docker Desktop"                                            │  │
+│  │ Click to open                                                      │  │
+│  │ Wait 30 seconds for it to fully start                              │  │
+│  └─────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+│  Step 3: Retry Build                                                      │
+│  ┌─────────────────────────────────────────────────────────────────────┐  │
+│  │ build-images-with-retry.bat                                        │  │
+│  └─────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+│  Success Rate: 60-70%                                                     │
+│  Time: 2-3 minutes                                                        │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ SOLUTION 2: CHECK INTERNET CONNECTION ────────────────────────────────────┐
+│                                                                             │
+│  Step 1: Test Connectivity                                                │
+│  ┌─────────────────────────────────────────────────────────────────────┐  │
+│  │ ping google.com                                                    │  │
+│  │                                                                     │  │
+│  │ Expected: Reply from 142.250.185.46: bytes=32 time=XX ms TTL=XX   │  │
+│  │ If no response: Internet connection problem                        │  │
+│  └─────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+│  Step 2: If No Response                                                   │
+│  ┌─────────────────────────────────────────────────────────────────────┐  │
+│  │ - Check WiFi/Ethernet connection                                   │  │
+│  │ - Try wired connection if possible                                 │  │
+│  │ - Restart your router                                              │  │
+│  │ - Wait 1 minute                                                    │  │
+│  └─────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+│  Step 3: Retry Build                                                      │
+│  ┌─────────────────────────────────────────────────────────────────────┐  │
+│  │ build-images-with-retry.bat                                        │  │
+│  └─────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+│  Time: 2-5 minutes                                                        │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ SOLUTION 3: CLEAN DOCKER AND RETRY ───────────────────────────────────────┐
+│                                                                             │
+│  Step 1: Open Command Prompt                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐  │
+│  │ Win + R → cmd → Enter                                              │  │
+│  └─────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+│  Step 2: Navigate to Project                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐  │
+│  │ cd "C:\Users\Sangini\OneDrive\Desktop\devpod new\DevPod"           │  │
+│  └─────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+│  Step 3: Clean Docker                                                     │
+│  ┌─────────────────────────────────────────────────────────────────────┐  │
+│  │ docker system prune -a -f                                          │  │
+│  └─────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+│  Step 4: Retry Build                                                      │
+│  ┌─────────────────────────────────────────────────────────────────────┐  │
+│  │ build-images-with-retry.bat                                        │  │
+│  └─────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+│  Time: 5-10 minutes                                                       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ SOLUTION 4: USE NEW BUILD SCRIPT WITH RETRY ──────────────────────────────┐
+│                                                                             │
+│  The new script retries automatically:                                    │
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐  │
+│  │ build-images-with-retry.bat                                        │  │
+│  └─────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+│  Features:                                                                │
+│  ✅ Retries each image up to 5 times                                      │
+│  ✅ Waits 10 seconds between retries                                      │
+│  ✅ Better error messages                                                 │
+│  ✅ More reliable                                                         │
+│                                                                             │
+│  Time: 15-30 minutes (with retries)                                       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ RECOMMENDED WORKFLOW ─────────────────────────────────────────────────────┐
+│                                                                             │
+│  1. Restart Docker Desktop                                                │
+│     └─ Close and reopen Docker Desktop                                    │
+│        Time: 2-3 minutes                                                  │
+│                                                                             │
+│  2. Run: build-images-with-retry.bat                                      │
+│     └─ Automatic retry up to 5 times                                      │
+│        Time: 15-30 minutes                                                │
+│                                                                             │
+│  3. If fails, wait 5 minutes                                              │
+│     └─ Package repository might be slow                                   │
+│        Time: 5 minutes                                                    │
+│                                                                             │
+│  4. Retry: build-images-with-retry.bat                                    │
+│     └─ Try again with fresh connection                                    │
+│        Time: 15-30 minutes                                                │
+│                                                                             │
+│  5. If still fails, read: NETWORK-TIMEOUT-FIX.md                          │
+│     └─ Advanced troubleshooting                                           │
+│        Time: Varies                                                       │
+│                                                                             │
+│  Total Time: 20-40 minutes                                                │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ QUICK CHECKLIST ──────────────────────────────────────────────────────────┐
+│                                                                             │
+│  Before Retrying:                                                         │
+│  ☐ Internet connection working (ping google.com)                          │
+│  ☐ Docker Desktop restarted                                               │
+│  ☐ Ran: docker system prune -a                                            │
+│  ☐ At least 20GB free disk space (dir C:\)                                │
+│                                                                             │
+│  Retry Build:                                                             │
+│  ☐ Run: build-images-with-retry.bat                                       │
+│  ☐ Wait for completion                                                    │
+│  ☐ Don't close Command Prompt                                             │
+│                                                                             │
+│  Verify:                                                                  │
+│  ☐ docker images | findstr devpod                                         │
+│  ☐ Should show 4 images                                                   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ SUCCESS INDICATORS ───────────────────────────────────────────────────────┐
+│                                                                             │
+│  When build succeeds:                                                     │
+│                                                                             │
+│  ✅ Node.js image built successfully                                      │
+│  ✅ MERN image built successfully                                         │
+│  ✅ Java image built successfully                                         │
+│                                                                             │
+│  Verify:                                                                  │
+│  docker images | findstr devpod                                           │
+│                                                                             │
+│  Expected output:                                                         │
+│  devpod-python      latest    f1b91121a09e   2 minutes ago   1.17GB       │
+│  devpod-nodejs      latest    XXXXXXXXX      XX minutes ago  XXX MB       │
+│  devpod-mern        latest    XXXXXXXXX      XX minutes ago  XXX MB       │
+│  devpod-java        latest    XXXXXXXXX      XX minutes ago  XXX MB       │
+│                                                                             │
+│  ✅ SUCCESS! All 4 images present                                         │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─ QUICK COMMANDS ───────────────────────────────────────────────────────────┐
+│                                                                             │
+│  Test internet:                                                           │
+│  ping google.com                                                          │
+│                                                                             │
+│  Clean Docker:                                                            │
+│  docker system prune -a -f                                                │
+│                                                                             │
+│  Retry build:                                                             │
+│  build-images-with-retry.bat                                              │
+│                                                                             │
+│  Verify:                                                                  │
+│  docker images | findstr devpod                                           │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║  RECOMMENDED: Restart Docker Desktop, then run build-images-with-retry.bat║
+║                                                                            ║
+║  For detailed help: Read NETWORK-TIMEOUT-FIX.md                           ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
