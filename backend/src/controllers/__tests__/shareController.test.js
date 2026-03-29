@@ -1,12 +1,14 @@
 jest.mock('../../models/Workspace', () => ({
   findOne: jest.fn(),
   create: jest.fn(),
+  deleteOne: jest.fn(),
 }));
 
 jest.mock('../../models/ShareSnapshot', () => ({
   findOne: jest.fn(),
   create: jest.fn(),
   updateOne: jest.fn(),
+  updateMany: jest.fn(),
 }));
 
 jest.mock('../../models/Activity', () => ({
@@ -21,6 +23,7 @@ jest.mock('../../services/shareService', () => ({
 
 jest.mock('../../services/dockerService', () => ({
   launchWorkspace: jest.fn(),
+  deleteWorkspace: jest.fn(),
 }));
 
 const Workspace = require('../../models/Workspace');
@@ -41,6 +44,10 @@ describe('shareController', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useRealTimers();
+    Workspace.deleteOne.mockResolvedValue({ deletedCount: 1 });
+    ShareSnapshot.updateOne.mockResolvedValue({ modifiedCount: 1 });
+    ShareSnapshot.updateMany.mockResolvedValue({ modifiedCount: 1 });
+    dockerService.deleteWorkspace.mockResolvedValue(undefined);
   });
 
   describe('createShareLink', () => {
@@ -69,6 +76,55 @@ describe('shareController', () => {
       expect(res.json).toHaveBeenCalledWith({
         error: 'Only Python workspaces can be shared currently',
       });
+    });
+
+    test('deactivates older active share links after creating a new one', async () => {
+      const workspace = {
+        _id: 'workspace-db-id',
+        workspaceId: 'ws-1',
+        template: 'python',
+        name: 'Demo Workspace',
+        description: 'Shared project',
+        status: 'running',
+        isShared: true,
+        shareToken: 'old-token',
+        save: jest.fn().mockResolvedValue(undefined),
+      };
+
+      Workspace.findOne.mockResolvedValue(workspace);
+      shareService.createWorkspaceSnapshot.mockResolvedValue({
+        files: [{ path: '/app.py', size: 12 }],
+        packages: [],
+        totalSize: 12,
+      });
+      shareService.generateShareToken.mockReturnValue('new-token');
+      ShareSnapshot.create.mockResolvedValue({ _id: 'share-snapshot-id' });
+      Activity.create.mockResolvedValue(undefined);
+
+      const req = {
+        session: { userId: 'user-1' },
+        params: { workspaceId: 'ws-1' },
+        body: { expiresIn: 24, maxClones: 2 },
+      };
+      const res = createRes();
+
+      await shareController.createShareLink(req, res);
+
+      expect(ShareSnapshot.updateMany).toHaveBeenCalledWith(
+        {
+          workspaceId: 'ws-1',
+          isActive: true,
+          _id: { $ne: 'share-snapshot-id' },
+        },
+        { isActive: false }
+      );
+      expect(workspace.save).toHaveBeenCalled();
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          shareToken: 'new-token',
+        })
+      );
     });
   });
 
@@ -132,6 +188,128 @@ describe('shareController', () => {
       );
       expect(shareSnapshot.incrementCloneCount).toHaveBeenCalled();
       setTimeoutSpy.mockRestore();
+    });
+
+    test('cleans up the new workspace when snapshot restore fails', async () => {
+      const setTimeoutSpy = jest.spyOn(global, 'setTimeout').mockImplementation((fn) => {
+        fn();
+        return 0;
+      });
+
+      const shareSnapshot = {
+        template: 'python',
+        snapshot: { files: [], packages: [] },
+        description: 'Shared project',
+        name: 'Demo Workspace',
+        isValid: jest.fn().mockReturnValue(true),
+        incrementCloneCount: jest.fn().mockResolvedValue(undefined),
+      };
+
+      ShareSnapshot.findOne.mockResolvedValue(shareSnapshot);
+      dockerService.launchWorkspace.mockResolvedValue({
+        containerId: 'container-123',
+        idePort: 4321,
+        ideUrl: 'http://localhost:4321',
+      });
+      shareService.restoreWorkspaceSnapshot.mockRejectedValue(new Error('restore failed'));
+
+      const req = {
+        session: { userId: 'user-1' },
+        params: { shareToken: 'share-token' },
+        body: { customName: 'Demo Workspace (Copy)' },
+      };
+      const res = createRes();
+
+      await shareController.cloneWorkspace(req, res);
+
+      expect(Workspace.create).not.toHaveBeenCalled();
+      expect(shareSnapshot.incrementCloneCount).not.toHaveBeenCalled();
+      expect(dockerService.deleteWorkspace).toHaveBeenCalledWith(
+        expect.stringMatching(/^user-1-python-/)
+      );
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: 'restore failed' });
+      setTimeoutSpy.mockRestore();
+    });
+
+    test('cleans up the new workspace when package installation fails', async () => {
+      const setTimeoutSpy = jest.spyOn(global, 'setTimeout').mockImplementation((fn) => {
+        fn();
+        return 0;
+      });
+
+      const shareSnapshot = {
+        template: 'python',
+        snapshot: { files: [], packages: ['flask'] },
+        description: 'Shared project',
+        name: 'Demo Workspace',
+        isValid: jest.fn().mockReturnValue(true),
+        incrementCloneCount: jest.fn().mockResolvedValue(undefined),
+      };
+
+      ShareSnapshot.findOne.mockResolvedValue(shareSnapshot);
+      dockerService.launchWorkspace.mockResolvedValue({
+        containerId: 'container-123',
+        idePort: 4321,
+        ideUrl: 'http://localhost:4321',
+      });
+      shareService.restoreWorkspaceSnapshot.mockRejectedValue(
+        new Error('Failed to install workspace packages: pip failed')
+      );
+
+      const req = {
+        session: { userId: 'user-1' },
+        params: { shareToken: 'share-token' },
+        body: { customName: 'Demo Workspace (Copy)' },
+      };
+      const res = createRes();
+
+      await shareController.cloneWorkspace(req, res);
+
+      expect(Workspace.create).not.toHaveBeenCalled();
+      expect(shareSnapshot.incrementCloneCount).not.toHaveBeenCalled();
+      expect(dockerService.deleteWorkspace).toHaveBeenCalledWith(
+        expect.stringMatching(/^user-1-python-/)
+      );
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({
+        error: 'Failed to install workspace packages: pip failed',
+      });
+      setTimeoutSpy.mockRestore();
+    });
+  });
+
+  describe('revokeShareLink', () => {
+    test('deactivates all active share links for the workspace', async () => {
+      const workspace = {
+        _id: 'workspace-db-id',
+        workspaceId: 'ws-1',
+        name: 'Demo Workspace',
+        isShared: true,
+        shareToken: 'token-1',
+        save: jest.fn().mockResolvedValue(undefined),
+      };
+
+      Workspace.findOne.mockResolvedValue(workspace);
+      Activity.create.mockResolvedValue(undefined);
+
+      const req = {
+        session: { userId: 'user-1' },
+        params: { workspaceId: 'ws-1' },
+      };
+      const res = createRes();
+
+      await shareController.revokeShareLink(req, res);
+
+      expect(ShareSnapshot.updateMany).toHaveBeenCalledWith(
+        { workspaceId: 'ws-1', isActive: true },
+        { isActive: false }
+      );
+      expect(workspace.save).toHaveBeenCalled();
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        message: 'Share link revoked successfully',
+      });
     });
   });
 });

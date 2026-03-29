@@ -25,6 +25,8 @@ router.get('/:workspaceId/details', isAuthenticated, workspaceController.getWork
 router.post('/launch', isAuthenticated, async (req, res) => {
   const { template, name, description, repositoryUrl } = req.body;
   const userId = req.session.userId;
+  let containerLaunched = false;
+  let workspaceSaved = false;
   
   console.log(`🚀 Launch request from user ${userId}:`, { template, name });
   
@@ -44,6 +46,7 @@ router.post('/launch', isAuthenticated, async (req, res) => {
     
     // Launch Docker container
     const result = await dockerService.launchWorkspace(userId, template, workspaceId);
+    containerLaunched = true;
     
     console.log(`✅ Container launched successfully:`, result);
     
@@ -62,6 +65,7 @@ router.post('/launch', isAuthenticated, async (req, res) => {
       repositoryUrl: repositoryUrl || '',
       repositoryName: repositoryUrl ? repositoryUrl.split('/').pop().replace('.git', '') : ''
     });
+    workspaceSaved = true;
 
     console.log(`💾 Workspace saved to database:`, workspace._id);
 
@@ -96,6 +100,22 @@ router.post('/launch', isAuthenticated, async (req, res) => {
     res.status(200).json(response);
     
   } catch (error) {
+    if (workspaceSaved) {
+      try {
+        await Workspace.deleteOne({ workspaceId });
+      } catch (cleanupError) {
+        console.warn(`⚠️  Failed to remove incomplete workspace record ${workspaceId}:`, cleanupError.message);
+      }
+    }
+
+    if (containerLaunched) {
+      try {
+        await dockerService.deleteWorkspace(workspaceId);
+      } catch (cleanupError) {
+        console.warn(`⚠️  Failed to clean up workspace resources ${workspaceId}:`, cleanupError.message);
+      }
+    }
+
     console.error(`❌ Launch failed for workspace ${workspaceId}:`, error.message);
     console.error('Full error:', error);
     

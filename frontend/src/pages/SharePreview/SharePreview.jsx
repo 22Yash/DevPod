@@ -13,7 +13,47 @@ export default function SharePreview() {
   const [customName, setCustomName] = useState('');
 
   useEffect(() => {
-    fetchSharePreview();
+    let isMounted = true;
+    setLoading(true);
+    setError('');
+
+    async function fetchSharePreview() {
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/share/${shareToken}`,
+          {
+            credentials: 'include'
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to load share preview');
+        }
+
+        if (!isMounted) {
+          return;
+        }
+
+        setShareData(data);
+        setCustomName(`${data.name} (Copy)`);
+      } catch (err) {
+        if (isMounted) {
+          setError(err.message);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void fetchSharePreview();
+
+    return () => {
+      isMounted = false;
+    };
   }, [shareToken]);
 
   const openPendingIdeTab = () => window.open('about:blank', '_blank');
@@ -29,30 +69,6 @@ export default function SharePreview() {
   const closePendingIdeTab = (ideTab) => {
     if (ideTab && !ideTab.closed) {
       ideTab.close();
-    }
-  };
-
-  const fetchSharePreview = async () => {
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/share/${shareToken}`,
-        {
-          credentials: 'include'
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to load share preview');
-      }
-
-      setShareData(data);
-      setCustomName(`${data.name} (Copy)`);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
     }
   };
 

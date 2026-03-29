@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import { Github, Monitor, Rocket, Zap, Eye, Code, ArrowRight, Menu, X, Share2, Settings, Cloud, Terminal, Globe } from 'lucide-react';
 

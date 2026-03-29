@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "test": "jest",
-    "server": "node server.js"
+    "server": "node server.js",
+    "demo:reset": "node scripts/demo-reset.js"
   },
   "keywords": [],
   "author": "",
