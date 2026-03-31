@@ -1,0 +1,190 @@
+================================================================================
+                    WINDOWS - BUILD REMAINING IMAGES
+                              QUICK GUIDE
+================================================================================
+
+SITUATION:
+  ✅ Python image built successfully
+  ❌ Node.js, MERN, Java images NOT built
+
+SOLUTION:
+  Build the remaining 3 images using one of the methods below
+
+================================================================================
+                        METHOD 1: AUTOMATIC (EASIEST)
+================================================================================
+
+Step 1: Open Command Prompt
+  - Press: Win + R
+  - Type: cmd
+  - Press: Enter
+
+Step 2: Navigate to Project
+  cd "C:\Users\Sangini\OneDrive\Desktop\devpod new\DevPod"
+
+Step 3: Run Build Script
+  scripts/build/build-images-manual.bat
+
+Step 4: Wait for Completion
+  - Takes 15-30 minutes
+  - You'll see: ✅ All remaining images built!
+
+Step 5: Verify
+  docker images | findstr devpod
+  
+  Should show 4 images:
+  - devpod-python
+  - devpod-nodejs
+  - devpod-mern
+  - devpod-java
+
+================================================================================
+                        METHOD 2: POWERSHELL (ALTERNATIVE)
+================================================================================
+
+Step 1: Open PowerShell (Admin)
+  - Press: Win + X
+  - Click: Windows PowerShell (Admin)
+
+Step 2: Navigate to Project
+  cd "C:\Users\Sangini\OneDrive\Desktop\devpod new\DevPod"
+
+Step 3: Run Build Script
+  .\scripts/build/build-images-manual.ps1
+
+Step 4: Wait for Completion
+  - Takes 15-30 minutes
+  - You'll see: ✅ All remaining images built!
+
+Step 5: Verify
+  docker images | Select-String "devpod"
+  
+  Should show 4 images
+
+================================================================================
+                        METHOD 3: MANUAL COMMANDS
+================================================================================
+
+If scripts fail, run these commands one at a time:
+
+Step 1: Open Command Prompt
+  - Press: Win + R
+  - Type: cmd
+  - Press: Enter
+
+Step 2: Navigate to Project
+  cd "C:\Users\Sangini\OneDrive\Desktop\devpod new\DevPod"
+
+Step 3: Build Node.js (3-8 minutes)
+  docker build -t devpod-nodejs:latest ./docker/nodejs/
+
+Step 4: Build MERN (5-15 minutes)
+  docker build -t devpod-mern:latest ./docker/mern-template/
+
+Step 5: Build Java (5-10 minutes)
+  docker build -t devpod-java:latest ./docker/java/
+
+Step 6: Verify All Images
+  docker images | findstr devpod
+
+================================================================================
+                            QUICK COPY-PASTE
+================================================================================
+
+Navigate to project:
+  cd "C:\Users\Sangini\OneDrive\Desktop\devpod new\DevPod"
+
+Build Node.js:
+  docker build -t devpod-nodejs:latest ./docker/nodejs/
+
+Build MERN:
+  docker build -t devpod-mern:latest ./docker/mern-template/
+
+Build Java:
+  docker build -t devpod-java:latest ./docker/java/
+
+Verify:
+  docker images | findstr devpod
+
+================================================================================
+                            TROUBLESHOOTING
+================================================================================
+
+Problem: "Cannot find path"
+Solution: Make sure you're in the right directory
+  cd "C:\Users\Sangini\OneDrive\Desktop\devpod new\DevPod"
+
+Problem: "Docker daemon not running"
+Solution: Start Docker Desktop
+  1. Click Windows Start
+  2. Search "Docker Desktop"
+  3. Click to open
+  4. Wait 30 seconds
+  5. Retry build
+
+Problem: Build hangs
+Solution: Wait longer (MERN can take 15 minutes)
+  Or restart Docker and retry
+
+Problem: "Out of disk space"
+Solution: Free up space
+  1. Check: dir C:\
+  2. Delete unnecessary files
+  3. Empty Recycle Bin
+  4. Retry
+
+================================================================================
+                            NEXT STEPS
+================================================================================
+
+After all 4 images are built:
+
+1. Start Backend (Terminal 1):
+   cd backend
+   npm run server
+
+2. Start Frontend (Terminal 2):
+   cd frontend
+   npm run dev
+
+3. Open Browser:
+   http://localhost:5173
+
+4. Login with GitHub
+
+5. Try "Use Template" - should work!
+
+================================================================================
+                            BUILD TIMES
+================================================================================
+
+Node.js:  3-8 minutes
+MERN:     5-15 minutes
+Java:     5-10 minutes
+Total:    15-30 minutes
+
+================================================================================
+                            SUCCESS INDICATORS
+================================================================================
+
+✅ All 4 images appear in: docker images | findstr devpod
+✅ Each image has a size (not "none")
+✅ Each image has a recent timestamp
+✅ No errors in build output
+
+================================================================================
+                            SUPPORT
+================================================================================
+
+If stuck:
+  1. Read: WINDOWS-BUILD-IMAGES-STEP-BY-STEP.md
+  2. Read: BUILD-REMAINING-IMAGES.md
+  3. Read: DOCKER-BUILD-TROUBLESHOOTING.md
+  4. Ask: Team lead with error message
+
+================================================================================
+                        RECOMMENDED: METHOD 1
+                    Run: scripts/build/build-images-manual.bat
+                    Wait 15-30 minutes
+                    Done!
+================================================================================

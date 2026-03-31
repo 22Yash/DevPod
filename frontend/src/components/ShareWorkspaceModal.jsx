@@ -65,7 +65,7 @@ export default function ShareWorkspaceModal({ workspace, onClose }) {
         alert('Share link revoked successfully');
         onClose();
       }
-    } catch (err) {
+    } catch {
       alert('Failed to revoke share link');
     }
   };

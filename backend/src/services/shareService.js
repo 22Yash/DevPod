@@ -106,29 +106,28 @@ async function restoreWorkspaceSnapshot(workspaceId, snapshot) {
 
     // Create directories and restore files
     for (const file of snapshot.files) {
+      const fullPath = `/workspace${file.path}`;
+      const dirPath = fullPath.substring(0, fullPath.lastIndexOf('/'));
+
       try {
-        const fullPath = `/workspace${file.path}`;
-        const dirPath = fullPath.substring(0, fullPath.lastIndexOf('/'));
-        
         // Create directory if needed
         if (dirPath !== '/workspace') {
           await dockerService.execInContainer(workspaceId, [
             'mkdir', '-p', dirPath
           ]);
         }
-        
+
         // Write file content safely using base64 encoding
         const b64 = Buffer.from(file.content).toString('base64');
         await dockerService.execInContainer(workspaceId, [
           'bash', '-c',
           `echo '${b64}' | base64 -d > '${fullPath}'`
         ]);
-        
-        console.log(`✅ Restored: ${file.path}`);
-        
       } catch (error) {
-        console.warn(`⚠️  Could not restore file ${file.path}:`, error.message);
+        throw new Error(`Failed to restore file ${file.path}: ${error.message}`);
       }
+
+      console.log(`✅ Restored: ${file.path}`);
     }
 
     // Install Python packages if requirements.txt exists
@@ -150,7 +149,7 @@ async function restoreWorkspaceSnapshot(workspaceId, snapshot) {
         
         console.log('✅ Python packages installed');
       } catch (error) {
-        console.warn('⚠️  Could not install packages:', error.message);
+        throw new Error(`Failed to install workspace packages: ${error.message}`);
       }
     }
 

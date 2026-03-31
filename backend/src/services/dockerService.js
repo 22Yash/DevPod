@@ -58,6 +58,84 @@
         },
     };
 
+    function isDockerNotFoundError(error) {
+        return error?.statusCode === 404 || /no such (container|volume)|not found/i.test(error?.message || '');
+    }
+
+    async function ensureDockerClient() {
+        if (!docker) {
+            await initializeDocker();
+        }
+
+        return docker;
+    }
+
+    async function removeContainerByName(containerName) {
+        const client = await ensureDockerClient();
+        const container = client.getContainer(containerName);
+
+        try {
+            await container.inspect();
+        } catch (error) {
+            if (isDockerNotFoundError(error)) {
+                console.log(`ℹ️  Container already absent: ${containerName}`);
+                return;
+            }
+
+            throw error;
+        }
+
+        try {
+            await container.stop();
+            console.log(`🛑 Container stopped: ${containerName}`);
+        } catch (error) {
+            if (isDockerNotFoundError(error)) {
+                console.log(`ℹ️  Container already absent while stopping: ${containerName}`);
+                return;
+            }
+
+            console.log(`⚠️  Container stop skipped for ${containerName}: ${error.message}`);
+        }
+
+        try {
+            await container.remove({ force: true });
+            console.log(`🗑️  Container removed: ${containerName}`);
+        } catch (error) {
+            if (!isDockerNotFoundError(error)) {
+                throw error;
+            }
+
+            console.log(`ℹ️  Container already removed: ${containerName}`);
+        }
+    }
+
+    async function removeVolumeByName(volumeName) {
+        const client = await ensureDockerClient();
+        const volume = client.getVolume(volumeName);
+
+        try {
+            await volume.inspect();
+        } catch (error) {
+            if (isDockerNotFoundError(error)) {
+                console.log(`ℹ️  Volume already absent: ${volumeName}`);
+                return;
+            }
+
+            throw error;
+        }
+
+        try {
+            await volume.remove();
+            console.log(`🗑️  Volume removed: ${volumeName}`);
+        } catch (error) {
+            if (!isDockerNotFoundError(error)) {
+                throw error;
+            }
+
+            console.log(`ℹ️  Volume already removed: ${volumeName}`);
+        }
+    }
+
     /**
      * Initialize Docker connection with multiple fallback options for Windows
      */
@@ -74,13 +152,18 @@
             try {
                 console.log(`🔄 Trying Docker config ${i + 1}/${configs.length}:`, config);
                 const testDocker = new Docker(config);
-                
+
+                let timeoutId;
                 const pingPromise = testDocker.ping();
-                const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Connection timeout')), 5000)
-                );
-                
-                await Promise.race([pingPromise, timeoutPromise]);
+                const timeoutPromise = new Promise((_, reject) => {
+                    timeoutId = setTimeout(() => reject(new Error('Connection timeout')), 5000);
+                });
+
+                try {
+                    await Promise.race([pingPromise, timeoutPromise]);
+                } finally {
+                    clearTimeout(timeoutId);
+                }
                 
                 docker = testDocker;
                 console.log(`✅ Docker connected successfully with config ${i + 1}:`, config);
@@ -148,11 +231,12 @@
      */
     async function launchWorkspace(userId, template, workspaceId) {
         console.log(`🚀 Launching workspace: ${workspaceId}, template: ${template}`);
-        
-        try {
-            if (!docker) await initializeDocker();
+        let volumeCreated = false;
 
-            await docker.ping();
+        try {
+            const client = await ensureDockerClient();
+
+            await client.ping();
             console.log('✅ Docker daemon is accessible');
 
             const imageName = TEMPLATE_IMAGES[template];
@@ -170,11 +254,13 @@
             // Create volume
             const volumeName = `devpod-${workspaceId}`;
             try {
-                await docker.createVolume({ Name: volumeName });
+                await client.createVolume({ Name: volumeName });
                 console.log(`✅ Volume created: ${volumeName}`);
+                volumeCreated = true;
             } catch (e) {
                 if (!e.message.includes("already exists")) throw e;
                 console.log(`⚠️  Volume already exists: ${volumeName}`);
+                volumeCreated = true;
             }
 
             console.log('🔧 Creating container with config:', {
@@ -184,7 +270,7 @@
             });
 
             // Create container - same structure for ALL templates
-            const container = await docker.createContainer({
+            const container = await client.createContainer({
                 Image: imageName,
                 name: `devpod-${workspaceId}`,
                 Tty: true,
@@ -222,6 +308,14 @@
             };
 
         } catch (error) {
+            if (volumeCreated) {
+                try {
+                    await deleteWorkspace(workspaceId);
+                } catch (cleanupError) {
+                    console.warn(`⚠️  Failed to clean up partially launched workspace ${workspaceId}: ${cleanupError.message}`);
+                }
+            }
+
             console.error(`❌ Failed to launch workspace ${workspaceId}:`, error.message);
             throw error;
         }
@@ -232,8 +326,8 @@
      */
     async function stopWorkspace(workspaceId) {
         try {
-            if (!docker) await initializeDocker();
-            const container = docker.getContainer(`devpod-${workspaceId}`);
+            const client = await ensureDockerClient();
+            const container = client.getContainer(`devpod-${workspaceId}`);
             await container.stop();
             console.log(`🛑 Workspace stopped: ${workspaceId}`);
         } catch (error) {
@@ -247,8 +341,8 @@
      */
     async function resumeWorkspace(workspaceId) {
         try {
-            if (!docker) await initializeDocker();
-            const container = docker.getContainer(`devpod-${workspaceId}`);
+            const client = await ensureDockerClient();
+            const container = client.getContainer(`devpod-${workspaceId}`);
             await container.start();
             console.log(`▶️  Workspace resumed: ${workspaceId}`);
             
@@ -272,28 +366,46 @@
      */
     async function deleteWorkspace(workspaceId) {
         try {
-            if (!docker) await initializeDocker();
-            const container = docker.getContainer(`devpod-${workspaceId}`);
-            const volumeName = `devpod-${workspaceId}`;
-            
-            try { 
-                await container.stop(); 
-                console.log(`🛑 Container stopped: ${workspaceId}`);
-            } catch (err) { 
-                console.log(`⚠️  Container already stopped: ${workspaceId}`);
-            }
-            
-            try {
-                await container.remove();
-                console.log(`🗑️  Container removed: ${workspaceId}`);
-                const volume = docker.getVolume(volumeName);
-                await volume.remove();
-                console.log(`🗑️  Volume removed: ${volumeName}`);
-            } catch (err) {
-                console.warn(`⚠️  Could not fully delete workspace ${workspaceId}: ${err.message}`);
-            }
+            const resourceName = `devpod-${workspaceId}`;
+            await removeContainerByName(resourceName);
+            await removeVolumeByName(resourceName);
         } catch (error) {
             console.error(`❌ Failed to delete workspace ${workspaceId}:`, error.message);
+            throw error;
+        }
+    }
+
+    async function resetDemoResources(prefix = 'devpod-') {
+        try {
+            const client = await ensureDockerClient();
+            const containers = await client.listContainers({ all: true });
+            const containerNames = new Set(
+                containers
+                    .flatMap((container) => container.Names || [])
+                    .map((name) => name.replace(/^\//, ''))
+                    .filter((name) => name.startsWith(prefix))
+            );
+            let volumesRemoved = 0;
+
+            for (const containerName of containerNames) {
+                await removeContainerByName(containerName);
+            }
+
+            const { Volumes = [] } = await client.listVolumes();
+            for (const volume of Volumes) {
+                if (volume.Name?.startsWith(prefix)) {
+                    await removeVolumeByName(volume.Name);
+                    volumesRemoved += 1;
+                }
+            }
+
+            return {
+                containersRemoved: containerNames.size,
+                volumesRemoved,
+                prefix,
+            };
+        } catch (error) {
+            console.error(`❌ Failed to reset Docker demo resources for prefix ${prefix}:`, error.message);
             throw error;
         }
     }
@@ -303,8 +415,8 @@
      */
     async function execInContainer(workspaceId, cmd) {
         try {
-            if (!docker) await initializeDocker();
-            const container = docker.getContainer(`devpod-${workspaceId}`);
+            const client = await ensureDockerClient();
+            const container = client.getContainer(`devpod-${workspaceId}`);
             const exec = await container.exec({
                 Cmd: cmd,
                 AttachStdout: true,
@@ -346,7 +458,7 @@
                 };
 
                 // Strip the 8-byte multiplex headers so we get clean output
-                docker.modem.demuxStream(stream, stdoutStream, stderrStream);
+                client.modem.demuxStream(stream, stdoutStream, stderrStream);
 
                 stdoutStream.on('data', (chunk) => { stdout += chunk.toString(); });
                 stderrStream.on('data', (chunk) => { stderr += chunk.toString(); });
@@ -373,4 +485,5 @@
         resumeWorkspace,
         deleteWorkspace,
         execInContainer,
+        resetDemoResources,
     };

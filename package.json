@@ -1,0 +1,7 @@
+{
+  "name": "devpod",
+  "private": true,
+  "scripts": {
+    "demo:reset": "npm --prefix backend run demo:reset"
+  }
+}

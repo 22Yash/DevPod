@@ -10,6 +10,10 @@ const shareController = {
    * POST /api/workspace/:workspaceId/share
    */
   createShareLink: async (req, res) => {
+    let createdShareSnapshot = null;
+    let workspace = null;
+    let previousShareState = null;
+
     try {
       if (!req.session.userId) {
         return res.status(401).json({ error: 'Unauthorized' });
@@ -19,7 +23,7 @@ const shareController = {
       const { expiresIn, maxClones } = req.body;
 
       // Find workspace
-      const workspace = await Workspace.findOne({
+      workspace = await Workspace.findOne({
         workspaceId,
         userId: req.session.userId
       });
@@ -64,7 +68,7 @@ const shareController = {
       }
 
       // Create share snapshot record
-      const shareSnapshot = await ShareSnapshot.create({
+      createdShareSnapshot = await ShareSnapshot.create({
         shareToken,
         workspaceId,
         userId: req.session.userId,
@@ -75,6 +79,11 @@ const shareController = {
         expiresAt,
         maxClones: maxClones || null
       });
+
+      previousShareState = {
+        isShared: workspace.isShared,
+        shareToken: workspace.shareToken,
+      };
 
       // Update workspace
       workspace.isShared = true;
@@ -90,6 +99,15 @@ const shareController = {
         timestamp: new Date()
       });
 
+      await ShareSnapshot.updateMany(
+        {
+          workspaceId,
+          isActive: true,
+          _id: { $ne: createdShareSnapshot._id },
+        },
+        { isActive: false }
+      );
+
       const shareUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/share/${shareToken}`;
 
       res.json({
@@ -103,6 +121,27 @@ const shareController = {
       });
 
     } catch (error) {
+      if (createdShareSnapshot?._id) {
+        try {
+          await ShareSnapshot.updateOne(
+            { _id: createdShareSnapshot._id },
+            { isActive: false }
+          );
+        } catch (cleanupError) {
+          console.warn('Failed to deactivate incomplete share snapshot:', cleanupError.message);
+        }
+      }
+
+      if (workspace && previousShareState) {
+        try {
+          workspace.isShared = previousShareState.isShared;
+          workspace.shareToken = previousShareState.shareToken;
+          await workspace.save();
+        } catch (cleanupError) {
+          console.warn('Failed to restore previous workspace share state:', cleanupError.message);
+        }
+      }
+
       console.error('Error creating share link:', error);
       res.status(500).json({ error: error.message });
     }
@@ -162,6 +201,9 @@ const shareController = {
    * POST /api/share/:shareToken/clone
    */
   cloneWorkspace: async (req, res) => {
+    let newWorkspaceId = null;
+    let createdWorkspace = false;
+
     try {
       if (!req.session.userId) {
         return res.status(401).json({ error: 'You must be logged in to clone a workspace' });
@@ -185,7 +227,7 @@ const shareController = {
       }
 
       // Generate new workspace ID
-      const newWorkspaceId = `${req.session.userId}-${shareSnapshot.template}-${Date.now()}`;
+      newWorkspaceId = `${req.session.userId}-${shareSnapshot.template}-${Date.now()}`;
 
       console.log(`🔄 Cloning workspace from share: ${shareToken}`);
       console.log(`📦 New workspace ID: ${newWorkspaceId}`);
@@ -218,6 +260,7 @@ const shareController = {
         idePort: containerInfo.idePort,
         clonedFrom: shareToken
       });
+      createdWorkspace = true;
 
       // Increment clone count
       await shareSnapshot.incrementCloneCount();
@@ -244,6 +287,22 @@ const shareController = {
       });
 
     } catch (error) {
+      if (newWorkspaceId) {
+        if (createdWorkspace) {
+          try {
+            await Workspace.deleteOne({ workspaceId: newWorkspaceId });
+          } catch (cleanupError) {
+            console.warn(`Failed to remove incomplete cloned workspace record ${newWorkspaceId}:`, cleanupError.message);
+          }
+        }
+
+        try {
+          await dockerService.deleteWorkspace(newWorkspaceId);
+        } catch (cleanupError) {
+          console.warn(`Failed to clean up incomplete cloned workspace ${newWorkspaceId}:`, cleanupError.message);
+        }
+      }
+
       console.error('Error cloning workspace:', error);
       res.status(500).json({ error: error.message });
     }
@@ -275,8 +334,8 @@ const shareController = {
       }
 
       // Deactivate share snapshot
-      await ShareSnapshot.updateOne(
-        { shareToken: workspace.shareToken },
+      await ShareSnapshot.updateMany(
+        { workspaceId, isActive: true },
         { isActive: false }
       );
 
