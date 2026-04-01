@@ -13,6 +13,7 @@ RUN apt-get update && \
     sudo \
     curl \
     ca-certificates \
+    dos2unix \
     && rm -rf /var/lib/apt/lists/*
 
 # Install code-server
@@ -30,6 +31,10 @@ COPY . /template
 
 # Copy template files to workspace for initial setup
 COPY . /workspace
+
+# Convert shell scripts from Windows to Unix line endings
+RUN dos2unix /template/startup.sh /template/devstart.sh \
+    /workspace/startup.sh /workspace/devstart.sh 2>/dev/null || true
 
 # Make scripts executable in both locations
 RUN chmod +x /template/startup.sh /workspace/startup.sh \

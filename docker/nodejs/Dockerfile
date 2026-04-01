@@ -13,6 +13,7 @@ RUN apt-get update && \
     sudo \
     curl \
     bash \
+    ca-certificates \
     # Clean up
     && rm -rf /var/lib/apt/lists/*
 
