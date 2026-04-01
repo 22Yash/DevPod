@@ -35,15 +35,11 @@
             env: ['SHELL=/bin/bash', 'DEBIAN_FRONTEND=noninteractive'],
             cmd: ['code-server', '--bind-addr', '0.0.0.0:8080', '--auth', 'none', '--disable-telemetry', '/workspace']
         },
-        // MERN exposes code-server + frontend dev server + backend API
+        // MERN only exposes code-server — frontend/backend accessed via /absproxy/PORT/
         'mern': {
-            ExposedPorts: { '8080/tcp': {}, '3000/tcp': {}, '5000/tcp': {} },
+            ExposedPorts: { '8080/tcp': {} },
             hostConfig: {
-                PortBindings: {
-                    '8080/tcp': [{ HostPort: '0' }],
-                    '3000/tcp': [{ HostPort: '0' }],
-                    '5000/tcp': [{ HostPort: '0' }],
-                },
+                PortBindings: { '8080/tcp': [{ HostPort: '0' }] },
                 Memory: 1024 * 1024 * 1024,
                 NanoCpus: 2 * 1e9,
             },
@@ -309,34 +305,6 @@
                 ideUrl: `http://localhost:${idePort}`,
             };
 
-            // Read extra ports for MERN workspaces and write them into the container
-            const frontendMapping = info.NetworkSettings.Ports['3000/tcp'];
-            const backendMapping = info.NetworkSettings.Ports['5000/tcp'];
-            if (frontendMapping && frontendMapping[0]) {
-                result.frontendPort = frontendMapping[0].HostPort;
-                result.frontendUrl = `http://localhost:${result.frontendPort}`;
-            }
-            if (backendMapping && backendMapping[0]) {
-                result.backendPort = backendMapping[0].HostPort;
-                result.backendUrl = `http://localhost:${result.backendPort}`;
-            }
-
-            // Write port info into container so devstart.sh and vite.config.js can read it
-            if (result.frontendPort || result.backendPort) {
-                try {
-                    const portsContent = [
-                        result.frontendPort ? `FRONTEND_PORT=${result.frontendPort}` : '',
-                        result.backendPort ? `BACKEND_PORT=${result.backendPort}` : '',
-                    ].filter(Boolean).join('\n');
-                    await execInContainer(workspaceId, [
-                        'sh', '-c', `printf '%s\\n' '${portsContent}' > /workspace/.devpod-ports`
-                    ]);
-                    console.log(`📝 Port info written to container: frontend=${result.frontendPort}, backend=${result.backendPort}`);
-                } catch (err) {
-                    console.warn(`⚠️  Could not write port info to container: ${err.message}`);
-                }
-            }
-
             return result;
 
         } catch (error) {
@@ -387,32 +355,6 @@
                 idePort: idePort,
                 ideUrl: `http://localhost:${idePort}`,
             };
-
-            const frontendMapping = info.NetworkSettings.Ports['3000/tcp'];
-            const backendMapping = info.NetworkSettings.Ports['5000/tcp'];
-            if (frontendMapping && frontendMapping[0]) {
-                result.frontendPort = frontendMapping[0].HostPort;
-                result.frontendUrl = `http://localhost:${result.frontendPort}`;
-            }
-            if (backendMapping && backendMapping[0]) {
-                result.backendPort = backendMapping[0].HostPort;
-                result.backendUrl = `http://localhost:${result.backendPort}`;
-            }
-
-            // Update port info inside container (ports may change after restart)
-            if (result.frontendPort || result.backendPort) {
-                try {
-                    const portsContent = [
-                        result.frontendPort ? `FRONTEND_PORT=${result.frontendPort}` : '',
-                        result.backendPort ? `BACKEND_PORT=${result.backendPort}` : '',
-                    ].filter(Boolean).join('\n');
-                    await execInContainer(workspaceId, [
-                        'sh', '-c', `printf '%s\\n' '${portsContent}' > /workspace/.devpod-ports`
-                    ]);
-                } catch (err) {
-                    console.warn(`⚠️  Could not write port info to container: ${err.message}`);
-                }
-            }
 
             return result;
         } catch (error) {

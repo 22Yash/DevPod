@@ -55,6 +55,10 @@ RUN npm install --silent
 # Return to workspace root
 WORKDIR /workspace
 
+# Make code-server PORTS tab and "Open in Browser" use /absproxy/ links.
+# Relative path so it works regardless of the Docker-mapped external port.
+ENV VSCODE_PROXY_URI="/absproxy/{{port}}/"
+
 # Expose ports: code-server, frontend dev server, backend API
 EXPOSE 8080 3000 5000
 
