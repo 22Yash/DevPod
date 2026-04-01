@@ -208,6 +208,8 @@ router.post('/:workspaceId/start', isAuthenticated, async (req, res) => {
       {
         status: 'running',
         idePort: result.idePort,
+        frontendPort: result.frontendPort || null,
+        backendPort: result.backendPort || null,
         lastAccessed: new Date()
       },
       { new: true }

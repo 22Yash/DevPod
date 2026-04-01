@@ -35,12 +35,15 @@
             env: ['SHELL=/bin/bash', 'DEBIAN_FRONTEND=noninteractive'],
             cmd: ['code-server', '--bind-addr', '0.0.0.0:8080', '--auth', 'none', '--disable-telemetry', '/workspace']
         },
-        // MERN uses EXACTLY the same port config as Python/Node
-        // Only difference is more memory and CPUs
+        // MERN exposes code-server + frontend dev server + backend API
         'mern': {
-            ExposedPorts: { '8080/tcp': {} },
+            ExposedPorts: { '8080/tcp': {}, '3000/tcp': {}, '5000/tcp': {} },
             hostConfig: {
-                PortBindings: { '8080/tcp': [{ HostPort: '0' }] },
+                PortBindings: {
+                    '8080/tcp': [{ HostPort: '0' }],
+                    '3000/tcp': [{ HostPort: '0' }],
+                    '5000/tcp': [{ HostPort: '0' }],
+                },
                 Memory: 1024 * 1024 * 1024,
                 NanoCpus: 2 * 1e9,
             },
@@ -300,12 +303,25 @@
 
             console.log(`✅ Workspace launched - IDE: http://localhost:${idePort}`);
 
-            // Return same structure for ALL templates
-            return {
+            const result = {
                 containerId: container.id,
                 idePort: idePort,
                 ideUrl: `http://localhost:${idePort}`,
             };
+
+            // Return extra ports for MERN workspaces
+            const frontendMapping = info.NetworkSettings.Ports['3000/tcp'];
+            const backendMapping = info.NetworkSettings.Ports['5000/tcp'];
+            if (frontendMapping && frontendMapping[0]) {
+                result.frontendPort = frontendMapping[0].HostPort;
+                result.frontendUrl = `http://localhost:${result.frontendPort}`;
+            }
+            if (backendMapping && backendMapping[0]) {
+                result.backendPort = backendMapping[0].HostPort;
+                result.backendUrl = `http://localhost:${result.backendPort}`;
+            }
+
+            return result;
 
         } catch (error) {
             if (volumeCreated) {
@@ -351,10 +367,23 @@
             const info = await container.inspect();
             const idePort = info.NetworkSettings.Ports['8080/tcp'][0].HostPort;
 
-            return {
+            const result = {
                 idePort: idePort,
                 ideUrl: `http://localhost:${idePort}`,
             };
+
+            const frontendMapping = info.NetworkSettings.Ports['3000/tcp'];
+            const backendMapping = info.NetworkSettings.Ports['5000/tcp'];
+            if (frontendMapping && frontendMapping[0]) {
+                result.frontendPort = frontendMapping[0].HostPort;
+                result.frontendUrl = `http://localhost:${result.frontendPort}`;
+            }
+            if (backendMapping && backendMapping[0]) {
+                result.backendPort = backendMapping[0].HostPort;
+                result.backendUrl = `http://localhost:${result.backendPort}`;
+            }
+
+            return result;
         } catch (error) {
             console.error(`❌ Failed to resume workspace ${workspaceId}:`, error.message);
             throw error;
