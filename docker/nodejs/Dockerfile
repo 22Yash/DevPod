@@ -16,8 +16,9 @@ RUN apt-get update && \
     # Clean up
     && rm -rf /var/lib/apt/lists/*
 
-# CRITICAL STEP: Install code-server globally (fixes Exited 127)
-RUN curl -fsSL https://code-server.dev/install.sh | sh
+# Install code-server (use install script with verification)
+RUN curl -fsSL https://code-server.dev/install.sh | sh -s -- --method=standalone --prefix=/usr/local && \
+    code-server --version
 
 # Set up the workspace directory
 RUN mkdir /workspace
