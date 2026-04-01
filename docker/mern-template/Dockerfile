@@ -31,8 +31,10 @@ COPY . /template
 # Copy template files to workspace for initial setup
 COPY . /workspace
 
-# Make scripts executable in both locations
-RUN chmod +x /template/startup.sh /workspace/startup.sh \
+# Fix Windows line endings and make scripts executable
+RUN sed -i 's/\r$//' /template/startup.sh /template/devstart.sh \
+    /workspace/startup.sh /workspace/devstart.sh && \
+    chmod +x /template/startup.sh /workspace/startup.sh \
     /template/devstart.sh /workspace/devstart.sh
 
 # Install root dependencies
