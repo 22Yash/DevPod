@@ -4,7 +4,7 @@
   "description": "MERN Stack Development Template for DevPod",
   "scripts": {
     "install-all": "npm install && cd frontend && npm install && cd ../backend && npm install",
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev": "bash /workspace/devstart.sh",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "cd backend && npm run dev",
     "start": "npm run dev"

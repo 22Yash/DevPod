@@ -31,8 +31,9 @@ COPY . /template
 # Copy template files to workspace for initial setup
 COPY . /workspace
 
-# Make startup script executable in both locations
-RUN chmod +x /template/startup.sh /workspace/startup.sh
+# Make scripts executable in both locations
+RUN chmod +x /template/startup.sh /workspace/startup.sh \
+    /template/devstart.sh /workspace/devstart.sh
 
 # Install root dependencies
 WORKDIR /workspace

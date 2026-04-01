@@ -472,29 +472,6 @@ const Dashboard = () => {
                           </div>
                         </div>
 
-                        {workspace.status === 'running' && workspace.frontendPort && (
-                          <div className="flex items-center gap-3 text-xs mb-4">
-                            <a
-                              href={`http://localhost:${workspace.frontendPort}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-emerald-400 hover:text-emerald-300 underline"
-                            >
-                              Frontend :{workspace.frontendPort}
-                            </a>
-                            {workspace.backendPort && (
-                              <a
-                                href={`http://localhost:${workspace.backendPort}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-400 hover:text-blue-300 underline"
-                              >
-                                Backend :{workspace.backendPort}
-                              </a>
-                            )}
-                          </div>
-                        )}
-
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-xs text-slate-500">Last accessed</p>

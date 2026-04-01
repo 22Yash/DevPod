@@ -309,7 +309,7 @@
                 ideUrl: `http://localhost:${idePort}`,
             };
 
-            // Return extra ports for MERN workspaces
+            // Read extra ports for MERN workspaces and write them into the container
             const frontendMapping = info.NetworkSettings.Ports['3000/tcp'];
             const backendMapping = info.NetworkSettings.Ports['5000/tcp'];
             if (frontendMapping && frontendMapping[0]) {
@@ -319,6 +319,22 @@
             if (backendMapping && backendMapping[0]) {
                 result.backendPort = backendMapping[0].HostPort;
                 result.backendUrl = `http://localhost:${result.backendPort}`;
+            }
+
+            // Write port info into container so devstart.sh and vite.config.js can read it
+            if (result.frontendPort || result.backendPort) {
+                try {
+                    const portsContent = [
+                        result.frontendPort ? `FRONTEND_PORT=${result.frontendPort}` : '',
+                        result.backendPort ? `BACKEND_PORT=${result.backendPort}` : '',
+                    ].filter(Boolean).join('\n');
+                    await execInContainer(workspaceId, [
+                        'sh', '-c', `printf '%s\\n' '${portsContent}' > /workspace/.devpod-ports`
+                    ]);
+                    console.log(`📝 Port info written to container: frontend=${result.frontendPort}, backend=${result.backendPort}`);
+                } catch (err) {
+                    console.warn(`⚠️  Could not write port info to container: ${err.message}`);
+                }
             }
 
             return result;
@@ -381,6 +397,21 @@
             if (backendMapping && backendMapping[0]) {
                 result.backendPort = backendMapping[0].HostPort;
                 result.backendUrl = `http://localhost:${result.backendPort}`;
+            }
+
+            // Update port info inside container (ports may change after restart)
+            if (result.frontendPort || result.backendPort) {
+                try {
+                    const portsContent = [
+                        result.frontendPort ? `FRONTEND_PORT=${result.frontendPort}` : '',
+                        result.backendPort ? `BACKEND_PORT=${result.backendPort}` : '',
+                    ].filter(Boolean).join('\n');
+                    await execInContainer(workspaceId, [
+                        'sh', '-c', `printf '%s\\n' '${portsContent}' > /workspace/.devpod-ports`
+                    ]);
+                } catch (err) {
+                    console.warn(`⚠️  Could not write port info to container: ${err.message}`);
+                }
             }
 
             return result;
