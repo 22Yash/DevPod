@@ -11,6 +11,7 @@ export default function SharePreview() {
   const [error, setError] = useState('');
   const [cloneError, setCloneError] = useState('');
   const [customName, setCustomName] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -51,6 +52,12 @@ export default function SharePreview() {
 
     void fetchSharePreview();
 
+    // Check if user is logged in
+    fetch(`${import.meta.env.VITE_API_URL}/api/auth/user`, { credentials: 'include' })
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => { if (isMounted) setIsLoggedIn(!!data?.authenticated); })
+      .catch(() => { if (isMounted) setIsLoggedIn(false); });
+
     return () => {
       isMounted = false;
     };
@@ -70,6 +77,15 @@ export default function SharePreview() {
     if (ideTab && !ideTab.closed) {
       ideTab.close();
     }
+  };
+
+  const handleLoginToClone = () => {
+    // Save current share URL so AuthCallback can redirect back here
+    localStorage.setItem('redirectAfterLogin', `/share/${shareToken}`);
+    const GITHUB_CLIENT_ID = import.meta.env.VITE_GITHUB_CLIENT_ID;
+    const redirectUri = import.meta.env.VITE_GITHUB_CALLBACK_URL || 'http://localhost:5173/auth/callback';
+    const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=user:email,repo`;
+    window.location.href = githubAuthUrl;
   };
 
   const handleClone = async () => {
@@ -224,36 +240,44 @@ export default function SharePreview() {
               Create your own copy of this workspace with all files and packages included.
             </p>
 
-            <div className="form-group">
-              <label>Workspace Name</label>
-              <input
-                type="text"
-                value={customName}
-                onChange={(e) => setCustomName(e.target.value)}
-                placeholder="Enter workspace name"
-                className="name-input"
-              />
-            </div>
+            {isLoggedIn === false ? (
+              <button
+                onClick={handleLoginToClone}
+                className="btn-clone"
+              >
+                Login with GitHub to Clone
+              </button>
+            ) : (
+              <>
+                <div className="form-group">
+                  <label>Workspace Name</label>
+                  <input
+                    type="text"
+                    value={customName}
+                    onChange={(e) => setCustomName(e.target.value)}
+                    placeholder="Enter workspace name"
+                    className="name-input"
+                  />
+                </div>
 
-            {cloneError && <div className="error-message">{cloneError}</div>}
+                {cloneError && <div className="error-message">{cloneError}</div>}
 
-            <button
-              onClick={handleClone}
-              disabled={cloning || !customName.trim()}
-              className="btn-clone"
-            >
-              {cloning ? (
-                <>
-                  <span className="spinner-small"></span>
-                  Cloning Workspace...
-                </>
-              ) : (
-                <>
-                  <span>🚀</span>
-                  Clone Workspace
-                </>
-              )}
-            </button>
+                <button
+                  onClick={handleClone}
+                  disabled={cloning || !customName.trim() || isLoggedIn === null}
+                  className="btn-clone"
+                >
+                  {cloning ? (
+                    <>
+                      <span className="spinner-small"></span>
+                      Cloning Workspace...
+                    </>
+                  ) : (
+                    'Clone Workspace'
+                  )}
+                </button>
+              </>
+            )}
           </div>
 
           {shareData.expiresAt && (

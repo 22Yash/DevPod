@@ -66,8 +66,10 @@ const AuthCallback = () => {
         // Show success message briefly
         console.log('🎉 Welcome,', data.user?.name || data.user?.login);
 
-        // Redirect to dashboard
-        navigate('/dashboard');
+        // Redirect to saved URL (e.g. share page) or dashboard
+        const redirectTo = localStorage.getItem('redirectAfterLogin');
+        localStorage.removeItem('redirectAfterLogin');
+        navigate(redirectTo || '/dashboard');
       } catch (error) {
         console.error('❌ Error during authentication:', error.message);
         
