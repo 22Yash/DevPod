@@ -21,6 +21,11 @@
         return binding ? Number(binding) : null;
     }
 
+    // In production, set WORKSPACE_HOST to the server's public domain/IP.
+    // Locally it defaults to localhost.
+    const WORKSPACE_HOST = process.env.WORKSPACE_HOST || 'localhost';
+    const WORKSPACE_PROTOCOL = process.env.WORKSPACE_PROTOCOL || 'http';
+
     function buildWorkspaceAccessResult(containerId, info) {
         const idePort = getHostPort(info, IDE_CONTAINER_PORT);
         const frontendPort = getHostPort(info, MERN_FRONTEND_CONTAINER_PORT);
@@ -29,17 +34,17 @@
         const result = {
             containerId,
             idePort,
-            ideUrl: `http://localhost:${idePort}`,
+            ideUrl: `${WORKSPACE_PROTOCOL}://${WORKSPACE_HOST}:${idePort}`,
         };
 
         if (frontendPort) {
             result.frontendPort = frontendPort;
-            result.frontendUrl = `http://localhost:${frontendPort}`;
+            result.frontendUrl = `${WORKSPACE_PROTOCOL}://${WORKSPACE_HOST}:${frontendPort}`;
         }
 
         if (backendPort) {
             result.backendPort = backendPort;
-            result.backendUrl = `http://localhost:${backendPort}`;
+            result.backendUrl = `${WORKSPACE_PROTOCOL}://${WORKSPACE_HOST}:${backendPort}`;
         }
 
         return result;
