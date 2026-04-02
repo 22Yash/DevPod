@@ -241,7 +241,11 @@ const shareController = {
       const containerInfo = await dockerService.launchWorkspace(
         req.session.userId,
         shareSnapshot.template,
-        newWorkspaceId
+        newWorkspaceId,
+        {
+          githubToken: req.session.githubToken,
+          gitUser: req.session.user
+        }
       );
 
       // Wait for container to be ready

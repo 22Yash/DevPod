@@ -20,15 +20,23 @@ const githubAuth = async (req, res) => {
       throw new Error('Invalid user data received from GitHub service');
     }
     
-    // Store user in session
+    // Store user in session (keep token server-side only)
     req.session.userId = user._id;
-    req.session.user = user;
-    
+    req.session.githubToken = user.accessToken;
+    req.session.user = {
+      _id: user._id,
+      githubId: user.githubId,
+      login: user.login,
+      avatar_url: user.avatar_url,
+      name: user.name,
+      email: user.email
+    };
+
     console.log('✅ User authenticated successfully:', user.login);
-    
-    res.json({ 
-      success: true, 
-      user,
+
+    res.json({
+      success: true,
+      user: req.session.user,
       message: 'Authentication successful'
     });
   } catch (error) {

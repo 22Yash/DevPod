@@ -89,14 +89,15 @@ async function getGitHubUser(code) {
       });
     }
 
-    // Return user data with MongoDB _id
+    // Return user data with MongoDB _id and access token for workspace Git
     return {
       _id: user._id,
       githubId: user.githubId,
       login: user.login,
       avatar_url: user.avatar_url,
       name: user.name,
-      email: user.email
+      email: user.email,
+      accessToken: access_token
     };
 
   } catch (error) {

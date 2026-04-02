@@ -45,7 +45,10 @@ router.post('/launch', isAuthenticated, async (req, res) => {
     console.log(`🔄 Launching Docker container for workspace: ${workspaceId}`);
     
     // Launch Docker container
-    const result = await dockerService.launchWorkspace(userId, template, workspaceId);
+    const result = await dockerService.launchWorkspace(userId, template, workspaceId, {
+      githubToken: req.session.githubToken,
+      gitUser: req.session.user
+    });
     containerLaunched = true;
     
     console.log(`✅ Container launched successfully:`, result);

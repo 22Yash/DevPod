@@ -290,7 +290,7 @@ EOF`
     /**
      * Launches a new code-server container for a user workspace.
      */
-    async function launchWorkspace(userId, template, workspaceId) {
+    async function launchWorkspace(userId, template, workspaceId, options = {}) {
         console.log(`🚀 Launching workspace: ${workspaceId}, template: ${template}`);
         let volumeCreated = false;
 
@@ -330,13 +330,23 @@ EOF`
                 PortBindings: config.hostConfig.PortBindings,
             });
 
+            // Build env vars, injecting Git credentials if provided
+            const envVars = [...(config.env || [])];
+            if (options.githubToken) {
+                envVars.push(`GITHUB_TOKEN=${options.githubToken}`);
+            }
+            if (options.gitUser) {
+                envVars.push(`GIT_USER_NAME=${options.gitUser.name || options.gitUser.login}`);
+                envVars.push(`GIT_USER_EMAIL=${options.gitUser.email || `${options.gitUser.login}@users.noreply.github.com`}`);
+            }
+
             // Create container - same structure for ALL templates
             const container = await client.createContainer({
                 Image: imageName,
                 name: `devpod-${workspaceId}`,
                 Tty: true,
                 ExposedPorts: config.ExposedPorts,
-                Env: config.env,
+                Env: envVars,
                 Cmd: config.cmd,
                 HostConfig: {
                     Binds: [`${volumeName}:/workspace`],
@@ -365,6 +375,25 @@ EOF`
             }
             if (result.backendUrl) {
                 console.log(`✅ MERN backend published at: ${result.backendUrl}`);
+            }
+
+            // Configure Git credentials inside the container
+            if (options.githubToken) {
+                try {
+                    await execInContainer(workspaceId, [
+                        'sh', '-c',
+                        'git config --global credential.helper "!f() { echo username=x-access-token; echo password=$GITHUB_TOKEN; }; f"'
+                    ]);
+                    if (options.gitUser) {
+                        const name = options.gitUser.name || options.gitUser.login;
+                        const email = options.gitUser.email || `${options.gitUser.login}@users.noreply.github.com`;
+                        await execInContainer(workspaceId, ['git', 'config', '--global', 'user.name', name]);
+                        await execInContainer(workspaceId, ['git', 'config', '--global', 'user.email', email]);
+                    }
+                    console.log('✅ Git credentials configured in workspace');
+                } catch (err) {
+                    console.warn(`⚠️  Could not configure Git credentials: ${err.message}`);
+                }
             }
 
             if (result.frontendPort || result.backendPort) {
