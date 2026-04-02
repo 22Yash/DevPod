@@ -1,5 +1,5 @@
-# Use a standard Node base image with bash
-FROM node:20-bullseye-slim 
+# Use Bookworm so current code-server releases have a compatible glibc.
+FROM node:20-bookworm-slim
 
 # Set user to root to install packages
 USER root
