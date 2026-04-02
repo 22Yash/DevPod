@@ -427,12 +427,7 @@ const Dashboard = () => {
               </motion.div>
 
               {/* Workspaces Grid */}
-              {dashboardLoading ? (
-                <motion.div variants={fadeInUp} className="text-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto mb-4"></div>
-                  <p className="text-slate-400 text-sm">Loading workspaces...</p>
-                </motion.div>
-              ) : filteredWorkspaces.length === 0 ? (
+              {filteredWorkspaces.length === 0 && !dashboardLoading ? (
                 <motion.div variants={fadeInUp} className="text-center py-12 bg-slate-800 rounded-2xl border border-slate-700">
                   <FolderOpen className="w-16 h-16 text-slate-600 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold mb-2">No workspaces yet</h3>
@@ -625,7 +620,7 @@ const Dashboard = () => {
       {shareWorkspace && (
         <ShareWorkspaceModal
           workspace={shareWorkspace}
-          onClose={() => setShareWorkspace(null)}
+          onClose={() => { setShareWorkspace(null); loadDashboardData(); }}
         />
       )}
     </div>
