@@ -1,8 +1,8 @@
-# Workspace Sharing Feature - Python Templates
+# Workspace Sharing Feature - Python, Node.js, and Java Templates
 
 ## Overview
 
-This feature allows users to share their Python workspaces with others through a unique URL. Recipients can clone the workspace to create their own independent copy with all files and packages included.
+This feature allows users to share their Python, Node.js, and Java workspaces with others through a unique URL. Recipients can clone the workspace to create their own independent copy with all files and dependencies included.
 
 ## How It Works
 
@@ -10,7 +10,8 @@ This feature allows users to share their Python workspaces with others through a
 
 **Prerequisites:**
 - Workspace must be running
-- Only Python workspaces are supported currently
+- Supported templates: Python, Node.js, Java
+- MERN workspaces are excluded currently
 
 **Steps:**
 1. Open your workspace in the dashboard
@@ -23,9 +24,11 @@ This feature allows users to share their Python workspaces with others through a
 
 **What Gets Captured:**
 - All files in `/workspace` directory (excluding hidden files, `__pycache__`, `node_modules`)
-- Files must be smaller than 1MB each
+- Files must be smaller than 500KB each
 - Total workspace size must be under 10MB
 - Python packages from `requirements.txt`
+- Node.js dependencies from `package.json`
+- Java dependencies from `pom.xml` or Gradle build files
 
 ### 2. Accessing a Shared Workspace (Recipient)
 
@@ -34,7 +37,7 @@ This feature allows users to share their Python workspaces with others through a
 2. View the workspace preview:
    - Owner information
    - File list
-   - Python packages
+   - Detected dependencies
    - Clone statistics
 3. Optionally customize the workspace name
 4. Click "Clone Workspace"
@@ -45,7 +48,10 @@ This feature allows users to share their Python workspaces with others through a
 1. New Docker container is created
 2. New Docker volume is created
 3. All files are copied to the new container
-4. Python packages are installed from `requirements.txt`
+4. Dependencies are restored based on template:
+   - Python: `pip install -r requirements.txt`
+   - Node.js: `npm`, `yarn`, or `pnpm` install based on project files
+   - Java: Maven or Gradle dependency restore
 5. Container is started and ready to use
 
 ### 3. Managing Share Links
@@ -97,9 +103,9 @@ GET /api/share/:shareToken
 **Response:**
 ```json
 {
-  "name": "My Python Project",
-  "description": "A sample Python workspace",
-  "template": "python",
+  "name": "My Shared Project",
+  "description": "A sample shared workspace",
+  "template": "nodejs",
   "owner": {
     "name": "John Doe",
     "avatar": "https://..."
@@ -108,7 +114,7 @@ GET /api/share/:shareToken
   "files": [
     { "path": "/app.py", "size": 1234 }
   ],
-  "packages": ["flask==2.0.1", "requests==2.26.0"],
+  "packages": ["express@^4.21.0", "vite@^7.1.0"],
   "cloneCount": 3,
   "maxClones": 10,
   "expiresAt": "2026-02-20T10:00:00Z"
@@ -132,9 +138,9 @@ POST /api/share/:shareToken/clone
 {
   "success": true,
   "workspace": {
-    "workspaceId": "user-123-python-1234567890",
+    "workspaceId": "user-123-nodejs-1234567890",
     "name": "My Cloned Workspace",
-    "template": "python",
+    "template": "nodejs",
     "ideUrl": "http://localhost:8081",
     "status": "running"
   },
@@ -195,11 +201,11 @@ DELETE /api/workspace/:workspaceId/share
 
 ## Limitations
 
-- Only Python workspaces are supported
-- Maximum file size: 1MB per file
+- Supported templates: Python, Node.js, Java
+- MERN workspaces are excluded
+- Maximum file size: 500KB per file
 - Maximum workspace size: 10MB total
-- Files in hidden directories are excluded
-- `__pycache__` and `node_modules` are excluded
+- Dependency caches, build output, and obvious secret files are excluded
 - Workspace must be running to create share link
 
 ## Security Considerations

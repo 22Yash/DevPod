@@ -16,6 +16,7 @@ jest.mock('../../models/Activity', () => ({
 }));
 
 jest.mock('../../services/shareService', () => ({
+  isShareableTemplate: jest.fn(),
   createWorkspaceSnapshot: jest.fn(),
   generateShareToken: jest.fn(),
   restoreWorkspaceSnapshot: jest.fn(),
@@ -48,10 +49,13 @@ describe('shareController', () => {
     ShareSnapshot.updateOne.mockResolvedValue({ modifiedCount: 1 });
     ShareSnapshot.updateMany.mockResolvedValue({ modifiedCount: 1 });
     dockerService.deleteWorkspace.mockResolvedValue(undefined);
+    shareService.isShareableTemplate.mockImplementation((template) =>
+      ['python', 'nodejs', 'java'].includes(template)
+    );
   });
 
   describe('createShareLink', () => {
-    test('rejects non-Python workspaces before snapshotting', async () => {
+    test('rejects unsupported templates before snapshotting', async () => {
       Workspace.findOne.mockResolvedValue({
         workspaceId: 'ws-1',
         template: 'mern',
@@ -74,15 +78,15 @@ describe('shareController', () => {
       expect(shareService.createWorkspaceSnapshot).not.toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
-        error: 'Only Python workspaces can be shared currently',
+        error: 'Sharing is supported for Python, Node.js, and Java workspaces only',
       });
     });
 
-    test('deactivates older active share links after creating a new one', async () => {
+    test('deactivates older active share links after creating a new one for nodejs', async () => {
       const workspace = {
         _id: 'workspace-db-id',
         workspaceId: 'ws-1',
-        template: 'python',
+        template: 'nodejs',
         name: 'Demo Workspace',
         description: 'Shared project',
         status: 'running',
@@ -119,6 +123,7 @@ describe('shareController', () => {
         { isActive: false }
       );
       expect(workspace.save).toHaveBeenCalled();
+      expect(shareService.createWorkspaceSnapshot).toHaveBeenCalledWith('ws-1', 'nodejs');
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: true,
@@ -174,9 +179,16 @@ describe('shareController', () => {
         expect.objectContaining({
           containerId: 'container-123',
           idePort: 4321,
+          frontendPort: null,
+          backendPort: null,
           template: 'python',
           userId: 'user-1',
         })
+      );
+      expect(shareService.restoreWorkspaceSnapshot).toHaveBeenCalledWith(
+        expect.stringMatching(/^user-1-python-/),
+        shareSnapshot.snapshot,
+        'python'
       );
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -276,6 +288,30 @@ describe('shareController', () => {
         error: 'Failed to install workspace packages: pip failed',
       });
       setTimeoutSpy.mockRestore();
+    });
+
+    test('rejects cloning unsupported shared templates', async () => {
+      const shareSnapshot = {
+        template: 'mern',
+        isValid: jest.fn().mockReturnValue(true),
+      };
+
+      ShareSnapshot.findOne.mockResolvedValue(shareSnapshot);
+
+      const req = {
+        session: { userId: 'user-1' },
+        params: { shareToken: 'share-token' },
+        body: { customName: 'Demo Workspace (Copy)' },
+      };
+      const res = createRes();
+
+      await shareController.cloneWorkspace(req, res);
+
+      expect(dockerService.launchWorkspace).not.toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        error: 'Sharing is supported for Python, Node.js, and Java workspaces only',
+      });
     });
   });
 

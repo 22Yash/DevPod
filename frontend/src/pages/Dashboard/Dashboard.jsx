@@ -9,6 +9,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import ShareWorkspaceModal from '../../components/ShareWorkspaceModal';
 
+const SHAREABLE_TEMPLATES = new Set(['python', 'nodejs', 'java']);
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('workspaces');
@@ -443,6 +445,8 @@ const Dashboard = () => {
                 <motion.div variants={stagger} className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                   {filteredWorkspaces.map((workspace) => {
                     const isLoading = actionLoading === workspace.workspaceId;
+                    const canShareWorkspace =
+                      workspace.status === 'running' && SHAREABLE_TEMPLATES.has(workspace.template);
                     return (
                       <motion.div
                         key={workspace._id || workspace.id}
@@ -495,13 +499,15 @@ const Dashboard = () => {
                                 >
                                   Open
                                 </motion.button>
-                                <button
-                                  onClick={() => setShareWorkspace(workspace)}
-                                  className="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-all"
-                                  title="Share"
-                                >
-                                  <Share2 className="w-4 h-4" />
-                                </button>
+                                {canShareWorkspace && (
+                                  <button
+                                    onClick={() => setShareWorkspace(workspace)}
+                                    className="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-all"
+                                    title="Share"
+                                  >
+                                    <Share2 className="w-4 h-4" />
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => stopWorkspace(workspace.workspaceId)}
                                   disabled={isLoading}

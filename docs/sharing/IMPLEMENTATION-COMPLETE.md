@@ -256,9 +256,10 @@ View details → Clone button
 
 ## 🎯 Current Limitations
 
-- ⚠️ Only Python workspaces supported
+- ⚠️ Supported templates: Python, Node.js, Java
+- ⚠️ MERN workspaces are excluded
 - ⚠️ Max 10MB workspace size
-- ⚠️ Max 1MB per file
+- ⚠️ Max 500KB per file
 - ⚠️ No real-time collaboration
 - ⚠️ No password protection
 

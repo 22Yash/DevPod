@@ -33,7 +33,8 @@ const shareSnapshotSchema = new mongoose.Schema({
     files: [{
       path: String,
       content: String,
-      size: Number
+      size: Number,
+      encoding: String
     }],
     packages: [String],
     totalSize: Number

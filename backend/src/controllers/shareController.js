@@ -32,10 +32,9 @@ const shareController = {
         return res.status(404).json({ error: 'Workspace not found' });
       }
 
-      // Sharing support is only implemented end-to-end for Python workspaces.
-      if (workspace.template !== 'python') {
+      if (!shareService.isShareableTemplate(workspace.template)) {
         return res.status(400).json({
-          error: 'Only Python workspaces can be shared currently'
+          error: 'Sharing is supported for Python, Node.js, and Java workspaces only'
         });
       }
 
@@ -48,7 +47,7 @@ const shareController = {
 
       // Create snapshot
       console.log(`📸 Creating snapshot for workspace: ${workspaceId}`);
-      const snapshot = await shareService.createWorkspaceSnapshot(workspaceId);
+      const snapshot = await shareService.createWorkspaceSnapshot(workspaceId, workspace.template);
 
       // Check snapshot size (limit to 10MB)
       if (snapshot.totalSize > 10 * 1024 * 1024) {
@@ -226,6 +225,12 @@ const shareController = {
         });
       }
 
+      if (!shareService.isShareableTemplate(shareSnapshot.template)) {
+        return res.status(400).json({
+          error: 'Sharing is supported for Python, Node.js, and Java workspaces only'
+        });
+      }
+
       // Generate new workspace ID
       newWorkspaceId = `${req.session.userId}-${shareSnapshot.template}-${Date.now()}`;
 
@@ -245,7 +250,8 @@ const shareController = {
       // Restore snapshot to new container
       await shareService.restoreWorkspaceSnapshot(
         newWorkspaceId,
-        shareSnapshot.snapshot
+        shareSnapshot.snapshot,
+        shareSnapshot.template
       );
 
       // Create workspace record
@@ -258,6 +264,8 @@ const shareController = {
         template: shareSnapshot.template,
         containerId: containerInfo.containerId,
         idePort: containerInfo.idePort,
+        frontendPort: containerInfo.frontendPort || null,
+        backendPort: containerInfo.backendPort || null,
         clonedFrom: shareToken
       });
       createdWorkspace = true;

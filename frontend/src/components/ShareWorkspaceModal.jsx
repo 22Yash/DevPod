@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import './ShareWorkspaceModal.css';
 
+const SHAREABLE_TEMPLATES = new Set(['python', 'nodejs', 'java']);
+
 export default function ShareWorkspaceModal({ workspace, onClose, onShareCreated }) {
   const [loading, setLoading] = useState(false);
   const [shareData, setShareData] = useState(null);
@@ -9,10 +11,11 @@ export default function ShareWorkspaceModal({ workspace, onClose, onShareCreated
   const [maxClones, setMaxClones] = useState('');
   const [copied, setCopied] = useState(false);
   const [loadingExisting, setLoadingExisting] = useState(false);
+  const isShareableTemplate = SHAREABLE_TEMPLATES.has(workspace.template);
 
   // If workspace is already shared, load the existing share info
   useEffect(() => {
-    if (workspace.isShared && workspace.shareToken) {
+    if (isShareableTemplate && workspace.isShared && workspace.shareToken) {
       setLoadingExisting(true);
       fetch(
         `${import.meta.env.VITE_API_URL}/api/share/${workspace.shareToken}`,
@@ -35,9 +38,14 @@ export default function ShareWorkspaceModal({ workspace, onClose, onShareCreated
         .catch(() => {})
         .finally(() => setLoadingExisting(false));
     }
-  }, [workspace]);
+  }, [isShareableTemplate, workspace]);
 
   const generateShareLink = async () => {
+    if (!isShareableTemplate) {
+      setError('Sharing is supported for Python, Node.js, and Java workspaces only.');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -95,13 +103,19 @@ export default function ShareWorkspaceModal({ workspace, onClose, onShareCreated
             <p className="template-badge">{workspace.template}</p>
           </div>
 
+          {!isShareableTemplate && (
+            <div className="error-message">
+              Sharing is supported for Python, Node.js, and Java workspaces only.
+            </div>
+          )}
+
           {loadingExisting && (
             <p style={{ textAlign: 'center', color: '#6b7280', padding: '20px 0' }}>
               Loading share info...
             </p>
           )}
 
-          {showGenerateForm && (
+          {isShareableTemplate && showGenerateForm && (
             <>
               <div className="share-options">
                 <div className="form-group">
@@ -142,7 +156,7 @@ export default function ShareWorkspaceModal({ workspace, onClose, onShareCreated
             </>
           )}
 
-          {showShareResult && (
+          {isShareableTemplate && showShareResult && (
             <>
               {!shareData.existing && (
                 <div className="share-success">

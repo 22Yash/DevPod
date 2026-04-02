@@ -57,7 +57,7 @@ VITE v5.x.x ready in xxx ms
 Open http://localhost:5173 in your browser and:
 1. Login with GitHub
 2. Go to Dashboard
-3. Create a Python workspace
+3. Create a Python, Node.js, or Java workspace
 4. Wait for it to start (status: running)
 5. Look for the Share button (🔗 icon) next to "Open"
 
@@ -67,8 +67,8 @@ The Share button appears on workspace cards in the Dashboard:
 
 ```
 ┌────────────────────────────────────────┐
-│  my-python-project    [running]       │
-│  Python development workspace         │
+│  my-node-project      [running]       │
+│  Node.js development workspace        │
 │                                        │
 │  Last accessed: Today                 │
 │  ┌────────┐  ┌──┐  ┌──┐              │
@@ -79,15 +79,17 @@ The Share button appears on workspace cards in the Dashboard:
 
 **Important:** Share button only appears for:
 - ✅ Python workspaces
+- ✅ Node.js workspaces
+- ✅ Java workspaces
 - ✅ Running status
 - ❌ NOT for stopped workspaces
-- ❌ NOT for other templates (nodejs, mern, java)
+- ❌ NOT for MERN workspaces
 
 ## 🧪 Testing the Feature
 
 ### Test 1: Create Share Link
 
-1. Click the Share button (🔗) on a running Python workspace
+1. Click the Share button (🔗) on a running Python, Node.js, or Java workspace
 2. Modal opens with options:
    - Expires In: 24 hours (default)
    - Max Clones: Leave empty for unlimited
@@ -101,7 +103,7 @@ The Share button appears on workspace cards in the Dashboard:
 2. You should see:
    - Workspace name and owner
    - List of files
-   - Python packages
+   - Detected dependencies for the shared template
    - Clone button
 
 ### Test 3: Clone Workspace
@@ -117,7 +119,10 @@ The Share button appears on workspace cards in the Dashboard:
 
 1. Open the cloned workspace
 2. Check all files are present
-3. Open terminal and run: `pip list`
+3. Open terminal and run the template-appropriate dependency check:
+   - Python: `pip list`
+   - Node.js: `npm list --depth=0`
+   - Java (Maven): `mvn -q -DskipTests dependency:tree`
 4. Verify packages are installed
 
 ## 🔧 Troubleshooting
