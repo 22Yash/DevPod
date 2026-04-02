@@ -2,21 +2,23 @@ import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 
 const ProtectedRoute = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(null); // null = loading
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Check with backend if user is authenticated
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/user`, {
           method: 'GET',
-          credentials: 'include'
+          credentials: 'include' // Send cookies with request
         });
 
         if (response.ok) {
           const data = await response.json();
           if (data.authenticated) {
             setIsAuthenticated(true);
+            // Update localStorage with current user data
             localStorage.setItem('user', JSON.stringify(data.user));
             localStorage.setItem('isLoggedIn', 'true');
           } else {
@@ -44,13 +46,10 @@ const ProtectedRoute = ({ children }) => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-zinc-950">
+      <div className="flex items-center justify-center min-h-screen bg-slate-900">
         <div className="text-center">
-          <div className="relative w-10 h-10 mx-auto mb-4">
-            <div className="absolute inset-0 rounded-full border-2 border-zinc-800" />
-            <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-amber-500 animate-spin" />
-          </div>
-          <p className="text-zinc-500 text-sm font-mono">loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+          <p className="text-white text-xl">Loading...</p>
         </div>
       </div>
     );

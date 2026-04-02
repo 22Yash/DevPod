@@ -1,19 +1,13 @@
 import React, { useState, useEffect } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Monitor, Rocket, Code, Plus, Search,
+  Monitor, Rocket, Code, Settings, Plus, Search,
   Users, Clock, FolderOpen, GitBranch, Share2, Play, Activity, LogOut,
-  Square, Trash2, Terminal, ExternalLink
+  Square, Trash2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ShareWorkspaceModal from '../../components/ShareWorkspaceModal';
-
-const TEMPLATE_COLORS = {
-  python: '#3572A5',
-  nodejs: '#68A063',
-  mern: '#4DB33D',
-  java: '#ED8B00',
-};
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -236,11 +230,32 @@ const Dashboard = () => {
   };
 
   const templates = [
-    { id: 3, name: 'Python Development', description: 'Python 3.10 with Flask, FastAPI, and common packages', key: 'python', uses: 120 },
-    { id: 4, name: 'Node.js Backend', description: 'Node 20 with Express, npm, and build tools', key: 'nodejs', uses: 80 },
-    { id: 5, name: 'MERN Stack', description: 'MongoDB, Express, React, Node.js full-stack', key: 'mern', featured: true, uses: 200 },
-    { id: 6, name: 'Java Development', description: 'JDK 17 with Maven, Gradle, and code-server', key: 'java', uses: 95 }
+    { id: 3, name: 'Python Development', description: 'Python environment with code-server IDE', icon: '🐍', tags: ['Backend', 'Python', 'API'], uses: 120 },
+    { id: 4, name: 'Node.js Backend', description: 'Node.js and Express development environment', icon: '⚙️', tags: ['Backend', 'Node.js', 'Express'], uses: 80 },
+    { id: 5, name: 'MERN Stack', description: 'MongoDB, Express, React, Node.js full-stack environment', icon: '🍃', tags: ['Full-Stack', 'MongoDB', 'React'], featured: true, uses: 200 },
+    { id: 6, name: 'Java Development', description: 'Java 17 with Maven, Gradle, and code-server IDE', icon: '☕', tags: ['Backend', 'Java', 'Maven', 'Gradle'], uses: 95 }
   ];
+
+  const fadeInUp = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1, y: 0,
+      transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }
+    }
+  };
+
+  const stagger = {
+    visible: { transition: { staggerChildren: 0.1 } }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'running': return 'text-green-400 bg-green-400/10';
+      case 'stopped': return 'text-slate-400 bg-slate-400/10';
+      case 'starting': return 'text-yellow-400 bg-yellow-400/10';
+      default: return 'text-slate-400 bg-slate-400/10';
+    }
+  };
 
   const formatAction = (action) => {
     const labels = {
@@ -265,234 +280,253 @@ const Dashboard = () => {
     return matchesSearch && matchesFilter;
   });
 
-  const fade = {
-    hidden: { opacity: 0, y: 8 },
-    show: { opacity: 1, y: 0, transition: { duration: 0.35 } },
-  };
-
   return (
-    <div className="min-h-screen" style={{ background: '#111114', color: '#e8e8ed' }}>
-
-      {/* ── Top bar ── */}
-      <nav className="sticky top-0 z-50 h-14 flex items-center px-6" style={{ background: 'rgba(17,17,20,0.88)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #1e1e24' }}>
-        <div className="max-w-7xl w-full mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: '#f0b429' }}>
-              <Terminal className="w-3.5 h-3.5" style={{ color: '#111114' }} />
-            </div>
-            <span className="font-semibold text-sm tracking-tight">DevPod</span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {user && (
-              <div className="flex items-center gap-2 text-sm" style={{ color: '#7a7a8e' }}>
-                {user.avatar_url ? (
-                  <img src={user.avatar_url} alt={user.login} className="w-6 h-6 rounded-full" style={{ border: '1px solid #22222a' }} />
-                ) : (
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium" style={{ background: '#22222a', color: '#7a7a8e' }}>
-                    {user.login ? user.login[0].toUpperCase() : '?'}
-                  </div>
-                )}
-                <span className="text-xs">{user.name || user.login}</span>
+    <div className="bg-slate-900 text-white min-h-screen">
+      {/* Navigation */}
+      <motion.nav
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50"
+      >
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <motion.div className="flex items-center space-x-2" whileHover={{ scale: 1.05 }}>
+              <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center">
+                <Code className="w-5 h-5" />
               </div>
-            )}
-            <button onClick={handleLogout} className="p-1.5 rounded transition-colors" style={{ color: '#4a4a58' }} title="Logout"
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#ff6b6b')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#4a4a58')}
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+              <span className="text-xl font-bold">DevPod</span>
+            </motion.div>
+
+            <div className="flex items-center space-x-6">
+              {user && (
+                <div className="flex items-center space-x-2 text-sm text-slate-300">
+                  {user.avatar_url ? (
+                    <img src={user.avatar_url} alt={user.login} className="w-8 h-8 rounded-full border border-slate-700" />
+                  ) : (
+                    <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center">
+                      <span className="text-xs font-semibold">{user.login ? user.login[0].toUpperCase() : "?"}</span>
+                    </div>
+                  )}
+                  <span>{user.name || user.login}</span>
+                </div>
+              )}
+              <button
+                onClick={handleLogout}
+                className="p-2 hover:bg-red-500/10 text-red-400 hover:text-red-300 rounded-lg transition-colors"
+                title="Logout"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
-      </nav>
+      </motion.nav>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-
-        {/* ── Header + Stats ── */}
-        <div className="flex items-start justify-between mb-8">
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight mb-4">
-              Welcome back, {user?.name || user?.login || 'Developer'}
-            </h1>
-            <div className="flex items-center gap-6 text-xs" style={{ color: '#5a5a6a' }}>
-              {[
-                { label: 'active', value: stats.activeWorkspaces },
-                { label: 'projects', value: stats.totalProjects },
-                { label: 'collaborators', value: stats.collaborators },
-                { label: 'hours saved', value: stats.hoursSaved },
-              ].map((s, i) => (
-                <span key={i}>
-                  <span className="font-semibold text-sm" style={{ color: '#e8e8ed' }}>{s.value}</span>{' '}
-                  {s.label}
-                </span>
-              ))}
+        {/* Header */}
+        <motion.div initial="hidden" animate="visible" variants={stagger} className="mb-8">
+          <motion.div variants={fadeInUp} className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">
+                Welcome back, {user?.name || user?.login || "Developer"} 👋
+              </h1>
+              <p className="text-slate-300">Ready to build something amazing today?</p>
             </div>
-          </div>
-          <button
-            onClick={() => setActiveTab('templates')}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 hover:brightness-110"
-            style={{ background: '#f0b429', color: '#111114' }}
-          >
-            <Plus className="w-4 h-4" />
-            New Workspace
-          </button>
-        </div>
-
-        {/* ── Tabs ── */}
-        <div className="flex items-center gap-6 mb-8" style={{ borderBottom: '1px solid #1e1e24' }}>
-          {[
-            { id: 'workspaces', label: 'Workspaces', icon: <Monitor className="w-3.5 h-3.5" /> },
-            { id: 'templates', label: 'Templates', icon: <Rocket className="w-3.5 h-3.5" /> },
-            { id: 'activity', label: 'Activity', icon: <Activity className="w-3.5 h-3.5" /> },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => { setActiveTab(tab.id); if (tab.id === 'activity') loadActivities(); }}
-              className="flex items-center gap-1.5 pb-3 text-xs font-medium -mb-px transition-colors"
-              style={{
-                borderBottom: activeTab === tab.id ? '2px solid #f0b429' : '2px solid transparent',
-                color: activeTab === tab.id ? '#e8e8ed' : '#5a5a6a',
-              }}
+            <motion.button
+              onClick={() => setActiveTab('templates')}
+              className="bg-emerald-500 hover:bg-emerald-400 text-white px-6 py-3 rounded-xl font-semibold flex items-center space-x-2 transition-all"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
-        </div>
+              <Plus className="w-5 h-5" />
+              <span>New Workspace</span>
+            </motion.button>
+          </motion.div>
 
-        {/* ── Content ── */}
+          {/* Stats Cards */}
+          <motion.div variants={fadeInUp} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            {[
+              { label: 'Active Workspaces', value: stats.activeWorkspaces, icon: <Monitor className="w-5 h-5" />, colorClass: 'text-emerald-400' },
+              { label: 'Total Projects', value: stats.totalProjects, icon: <FolderOpen className="w-5 h-5" />, colorClass: 'text-blue-400' },
+              { label: 'Collaborators', value: stats.collaborators, icon: <Users className="w-5 h-5" />, colorClass: 'text-purple-400' },
+              { label: 'Hours Saved', value: stats.hoursSaved, icon: <Clock className="w-5 h-5" />, colorClass: 'text-orange-400' }
+            ].map((stat, index) => (
+              <div key={index} className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-slate-400 text-sm">{stat.label}</p>
+                    <p className="text-2xl font-bold mt-1">{stat.value}</p>
+                  </div>
+                  <div className={stat.colorClass}>
+                    {stat.icon}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </motion.div>
+        </motion.div>
+
+        {/* Tab Navigation */}
+        <motion.div initial="hidden" animate="visible" variants={fadeInUp} className="mb-8">
+          <div className="flex items-center space-x-1 bg-slate-800 p-1 rounded-xl w-fit">
+            {[
+              { id: 'workspaces', label: 'My Workspaces', icon: <Monitor className="w-4 h-4" /> },
+              { id: 'templates', label: 'Templates', icon: <Rocket className="w-4 h-4" /> },
+              { id: 'activity', label: 'Activity', icon: <Activity className="w-4 h-4" /> }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  if (tab.id === 'activity') loadActivities();
+                }}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-all ${
+                  activeTab === tab.id
+                    ? 'bg-emerald-500 text-white'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-700'
+                }`}
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Content based on active tab */}
         <AnimatePresence mode="wait">
-
-          {/* Workspaces */}
+          {/* Workspaces Tab */}
           {activeTab === 'workspaces' && (
-            <motion.div key="workspaces" initial="hidden" animate="show" exit="hidden" variants={{ show: { transition: { staggerChildren: 0.04 } }, hidden: {} }}>
-              <motion.div variants={fade} className="flex gap-3 mb-5">
+            <motion.div key="workspaces" initial="hidden" animate="visible" exit="hidden" variants={stagger}>
+              {/* Search and Filter */}
+              <motion.div variants={fadeInUp} className="flex flex-col md:flex-row gap-4 mb-6">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: '#4a4a58' }} />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
                   <input
                     type="text"
                     placeholder="Search workspaces..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 rounded-lg text-xs focus:outline-none transition-colors"
-                    style={{ background: '#16161a', border: '1px solid #22222a', color: '#e8e8ed' }}
-                    onFocus={(e) => (e.target.style.borderColor = '#33333d')}
-                    onBlur={(e) => (e.target.style.borderColor = '#22222a')}
+                    className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-emerald-500 transition-colors"
                   />
                 </div>
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="px-3 py-2 rounded-lg text-xs focus:outline-none"
-                  style={{ background: '#16161a', border: '1px solid #22222a', color: '#9898a8' }}
+                  className="px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl focus:outline-none focus:border-emerald-500 transition-colors"
                 >
-                  <option value="all">All</option>
+                  <option value="all">All Status</option>
                   <option value="running">Running</option>
                   <option value="stopped">Stopped</option>
                 </select>
               </motion.div>
 
+              {/* Workspaces Grid */}
               {filteredWorkspaces.length === 0 ? (
-                <motion.div variants={fade} className="text-center py-20 rounded-xl" style={{ background: '#16161a', border: '1px solid #1e1e24' }}>
-                  <FolderOpen className="w-10 h-10 mx-auto mb-3" style={{ color: '#2a2a35' }} />
-                  <p className="text-sm font-medium mb-1" style={{ color: '#7a7a8e' }}>No workspaces yet</p>
-                  <p className="text-xs mb-5" style={{ color: '#4a4a58' }}>Launch one from the Templates tab</p>
+                <motion.div variants={fadeInUp} className="text-center py-12 bg-slate-800 rounded-2xl border border-slate-700">
+                  <FolderOpen className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">No workspaces yet</h3>
+                  <p className="text-slate-400 mb-6">Create your first workspace to get started</p>
                   <button
                     onClick={() => setActiveTab('templates')}
-                    className="text-xs font-medium px-4 py-2 rounded-lg transition-colors"
-                    style={{ background: '#f0b429', color: '#111114' }}
+                    className="bg-emerald-500 hover:bg-emerald-400 text-white px-6 py-3 rounded-lg font-semibold transition-all"
                   >
                     Browse Templates
                   </button>
                 </motion.div>
               ) : (
-                <motion.div variants={{ show: { transition: { staggerChildren: 0.03 } }, hidden: {} }} className="rounded-xl overflow-hidden" style={{ border: '1px solid #1e1e24' }}>
-                  {/* Table header */}
-                  <div className="grid grid-cols-[1fr_120px_100px_140px_140px] gap-4 px-5 py-2.5 text-[10px] font-semibold uppercase tracking-wider" style={{ background: '#16161a', color: '#4a4a58', borderBottom: '1px solid #1e1e24' }}>
-                    <span>Workspace</span>
-                    <span>Template</span>
-                    <span>Status</span>
-                    <span>Last accessed</span>
-                    <span className="text-right">Actions</span>
-                  </div>
-
+                <motion.div variants={stagger} className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                   {filteredWorkspaces.map((workspace) => {
                     const isLoading = actionLoading === workspace.workspaceId;
-                    const tColor = TEMPLATE_COLORS[workspace.template] || '#5a5a6a';
                     return (
                       <motion.div
                         key={workspace._id || workspace.id}
-                        variants={fade}
-                        className="grid grid-cols-[1fr_120px_100px_140px_140px] gap-4 items-center px-5 py-3.5 transition-colors duration-150"
-                        style={{ borderBottom: '1px solid #1e1e24', background: '#111114' }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = '#14141a')}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = '#111114')}
+                        variants={fadeInUp}
+                        whileHover={{ y: -5 }}
+                        className="bg-slate-800 border border-slate-700 rounded-2xl p-6 hover:border-emerald-500/50 transition-all duration-300"
                       >
-                        {/* Name */}
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate" style={{ color: '#e8e8ed' }}>{workspace.name}</p>
-                          <p className="text-[11px] truncate mt-0.5" style={{ color: '#4a4a58' }}>{workspace.description}</p>
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <h3 className="text-xl font-semibold">{workspace.name}</h3>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(workspace.status)}`}>
+                                {workspace.status}
+                              </span>
+                            </div>
+                            <p className="text-slate-400 text-sm mb-3">{workspace.description}</p>
+                          </div>
                         </div>
 
-                        {/* Template */}
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: tColor }} />
-                          <span className="text-xs font-mono" style={{ color: '#7a7a8e' }}>{workspace.template}</span>
+                        <div className="flex items-center space-x-4 text-xs text-slate-400 mb-4">
+                          <div className="flex items-center space-x-1">
+                            <Code className="w-4 h-4" />
+                            <span>{workspace.template}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <GitBranch className="w-4 h-4" />
+                            <span>{workspace.branches || 1}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Users className="w-4 h-4" />
+                            <span>{workspace.collaborators?.length || 0}</span>
+                          </div>
                         </div>
 
-                        {/* Status */}
-                        <div className="flex items-center gap-1.5">
-                          <div className={`w-1.5 h-1.5 rounded-full ${workspace.status === 'running' ? 'bg-green-400' : 'bg-zinc-600'}`} />
-                          <span className="text-xs" style={{ color: workspace.status === 'running' ? '#4ade80' : '#5a5a6a' }}>{workspace.status}</span>
-                        </div>
-
-                        {/* Last accessed */}
-                        <span className="text-xs font-mono" style={{ color: '#4a4a58' }}>
-                          {new Date(workspace.lastAccessed).toLocaleDateString()}
-                        </span>
-
-                        {/* Actions */}
-                        <div className="flex items-center justify-end gap-1">
-                          {workspace.status === 'running' ? (
-                            <>
-                              <button
-                                onClick={() => window.open(`http://localhost:${workspace.idePort}`, '_blank')}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 hover:brightness-110"
-                                style={{ background: '#f0b429', color: '#111114' }}
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-slate-500">Last accessed</p>
+                            <p className="text-sm text-slate-300">
+                              {new Date(workspace.lastAccessed).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            {workspace.status === 'running' ? (
+                              <>
+                                <motion.button
+                                  onClick={() => window.open(`http://localhost:${workspace.idePort}`, '_blank')}
+                                  className="bg-emerald-500 hover:bg-emerald-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                >
+                                  Open
+                                </motion.button>
+                                <button
+                                  onClick={() => setShareWorkspace(workspace)}
+                                  className="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded-lg transition-all"
+                                  title="Share"
+                                >
+                                  <Share2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => stopWorkspace(workspace.workspaceId)}
+                                  disabled={isLoading}
+                                  className="p-2 text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 rounded-lg transition-all disabled:opacity-50"
+                                  title="Stop"
+                                >
+                                  <Square className="w-4 h-4" />
+                                </button>
+                              </>
+                            ) : (
+                              <motion.button
+                                onClick={() => startWorkspace(workspace.workspaceId)}
+                                disabled={isLoading}
+                                className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center space-x-1 disabled:opacity-50"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
                               >
-                                <ExternalLink className="w-3 h-3" />
-                                Open
-                              </button>
-                              <button onClick={() => setShareWorkspace(workspace)} className="p-1.5 rounded-md transition-colors" style={{ color: '#4a4a58' }} title="Share"
-                                onMouseEnter={(e) => (e.currentTarget.style.color = '#7a7a8e')}
-                                onMouseLeave={(e) => (e.currentTarget.style.color = '#4a4a58')}
-                              >
-                                <Share2 className="w-3.5 h-3.5" />
-                              </button>
-                              <button onClick={() => stopWorkspace(workspace.workspaceId)} disabled={isLoading} className="p-1.5 rounded-md transition-colors disabled:opacity-40" style={{ color: '#4a4a58' }} title="Stop"
-                                onMouseEnter={(e) => (e.currentTarget.style.color = '#fbbf24')}
-                                onMouseLeave={(e) => (e.currentTarget.style.color = '#4a4a58')}
-                              >
-                                <Square className="w-3.5 h-3.5" />
-                              </button>
-                            </>
-                          ) : (
+                                <Play className="w-3 h-3" />
+                                <span>{isLoading ? 'Starting...' : 'Start'}</span>
+                              </motion.button>
+                            )}
                             <button
-                              onClick={() => startWorkspace(workspace.workspaceId)}
+                              onClick={() => deleteWorkspace(workspace.workspaceId, workspace.name)}
                               disabled={isLoading}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors disabled:opacity-40"
-                              style={{ background: '#1e1e24', color: '#9898a8', border: '1px solid #2a2a35' }}
+                              className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all disabled:opacity-50"
+                              title="Delete"
                             >
-                              <Play className="w-3 h-3" />
-                              {isLoading ? 'Starting...' : 'Start'}
+                              <Trash2 className="w-4 h-4" />
                             </button>
-                          )}
-                          <button onClick={() => deleteWorkspace(workspace.workspaceId, workspace.name)} disabled={isLoading} className="p-1.5 rounded-md transition-colors disabled:opacity-40" style={{ color: '#4a4a58' }} title="Delete"
-                            onMouseEnter={(e) => (e.currentTarget.style.color = '#ff6b6b')}
-                            onMouseLeave={(e) => (e.currentTarget.style.color = '#4a4a58')}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          </div>
                         </div>
                       </motion.div>
                     );
@@ -502,84 +536,87 @@ const Dashboard = () => {
             </motion.div>
           )}
 
-          {/* Templates */}
+          {/* Templates Tab */}
           {activeTab === 'templates' && (
-            <motion.div key="templates" initial="hidden" animate="show" exit="hidden" variants={{ show: { transition: { staggerChildren: 0.06 } }, hidden: {} }}>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {templates.map((template) => {
-                  const isTemplateLaunching = launchingTemplateId === template.id;
-                  const tColor = TEMPLATE_COLORS[template.key] || '#5a5a6a';
-                  return (
-                    <motion.div
-                      key={template.id}
-                      variants={fade}
-                      className="rounded-xl p-5 transition-colors duration-200 group"
-                      style={{ background: '#16161a', border: '1px solid #22222a', borderTop: `2px solid ${tColor}` }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = '#1a1a20')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = '#16161a')}
-                    >
-                      <div className="mb-4">
-                        <h3 className="text-sm font-semibold mb-1" style={{ color: '#e8e8ed' }}>{template.name}</h3>
-                        <p className="text-xs leading-relaxed" style={{ color: '#5a5a6a' }}>{template.description}</p>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-mono" style={{ color: '#3a3a45' }}>{template.uses} launches</span>
-                        <button
+            <motion.div key="templates" initial="hidden" animate="visible" exit="hidden" variants={stagger}>
+              <motion.div variants={fadeInUp}>
+                <h2 className="text-2xl font-bold mb-4">All Templates</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {templates.map((template) => {
+                    const isTemplateLaunching = launchingTemplateId === template.id;
+                    return (
+                      <motion.div
+                        key={template.id}
+                        variants={fadeInUp}
+                        whileHover={{ y: -3 }}
+                        className="bg-slate-800 border border-slate-700 rounded-xl p-4 hover:border-slate-600 transition-all duration-300"
+                      >
+                        <div className="flex items-center space-x-3 mb-3">
+                          <span className="text-2xl">{template.icon}</span>
+                          <div>
+                            <h4 className="font-semibold">{template.name}</h4>
+                            <p className="text-xs text-slate-400">{template.uses} uses</p>
+                          </div>
+                        </div>
+                        <motion.button
                           onClick={() => launchWorkspace(template)}
+                          className="w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg text-sm font-medium transition-all"
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
                           disabled={isTemplateLaunching}
-                          className="px-4 py-1.5 rounded-md text-xs font-medium transition-all duration-150 disabled:opacity-40 hover:brightness-110"
-                          style={{ background: '#f0b429', color: '#111114' }}
                         >
-                          {isTemplateLaunching ? 'Launching...' : 'Launch'}
-                        </button>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
+                          {isTemplateLaunching ? 'Launching...' : 'Use'}
+                        </motion.button>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </motion.div>
             </motion.div>
           )}
 
-          {/* Activity */}
+          {/* Activity Tab */}
           {activeTab === 'activity' && (
-            <motion.div key="activity" initial="hidden" animate="show" exit="hidden" variants={{ show: { transition: { staggerChildren: 0.03 } }, hidden: {} }}>
-              {activities.length === 0 ? (
-                <motion.div variants={fade} className="text-center py-20">
-                  <Activity className="w-8 h-8 mx-auto mb-3" style={{ color: '#2a2a35' }} />
-                  <p className="text-sm" style={{ color: '#4a4a58' }}>No activity yet</p>
-                </motion.div>
-              ) : (
-                <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1e1e24' }}>
-                  {activities.map((activity, i) => (
-                    <motion.div
-                      key={activity._id}
-                      variants={fade}
-                      className="flex items-center justify-between px-5 py-3 transition-colors"
-                      style={{ borderBottom: i < activities.length - 1 ? '1px solid #1e1e24' : 'none', background: '#111114' }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = '#14141a')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = '#111114')}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#f0b429' }} />
-                        <div>
-                          <p className="text-xs font-medium" style={{ color: '#c8c8d0' }}>{formatAction(activity.action)}</p>
-                          <p className="text-[11px]" style={{ color: '#4a4a58' }}>{activity.workspaceId?.name || ''}</p>
+            <motion.div key="activity" initial="hidden" animate="visible" exit="hidden" variants={stagger}>
+              <motion.div variants={fadeInUp} className="bg-slate-800 border border-slate-700 rounded-2xl p-6">
+                <h2 className="text-2xl font-bold mb-6">Recent Activity</h2>
+                <div className="space-y-4">
+                  {activities.length === 0 ? (
+                    <div className="text-center py-8 text-slate-400">
+                      <Activity className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>No activity yet. Launch a workspace to get started!</p>
+                    </div>
+                  ) : (
+                    activities.map((activity) => (
+                      <div key={activity._id} className="flex items-center space-x-4 p-4 bg-slate-700/50 rounded-xl">
+                        <div className="w-10 h-10 bg-emerald-500/10 rounded-full flex items-center justify-center">
+                          <Activity className="w-5 h-5 text-emerald-400" />
                         </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{formatAction(activity.action)}</p>
+                          <p className="text-xs text-slate-400">
+                            {activity.workspaceId?.name || ''}
+                          </p>
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          {new Date(activity.timestamp).toLocaleString()}
+                        </p>
                       </div>
-                      <span className="text-[11px] font-mono" style={{ color: '#3a3a45' }}>
-                        {new Date(activity.timestamp).toLocaleString()}
-                      </span>
-                    </motion.div>
-                  ))}
+                    ))
+                  )}
                 </div>
-              )}
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
+      {/* Share Workspace Modal */}
       {shareWorkspace && (
-        <ShareWorkspaceModal workspace={shareWorkspace} onClose={() => setShareWorkspace(null)} />
+        <ShareWorkspaceModal
+          workspace={shareWorkspace}
+          onClose={() => setShareWorkspace(null)}
+        />
       )}
     </div>
   );
