@@ -620,7 +620,12 @@ const Dashboard = () => {
       {shareWorkspace && (
         <ShareWorkspaceModal
           workspace={shareWorkspace}
-          onClose={() => { setShareWorkspace(null); loadDashboardData(); }}
+          onClose={() => setShareWorkspace(null)}
+          onShareCreated={(wsId, token) => {
+            setWorkspaces(prev => prev.map(ws =>
+              ws.workspaceId === wsId ? { ...ws, isShared: true, shareToken: token } : ws
+            ));
+          }}
         />
       )}
     </div>

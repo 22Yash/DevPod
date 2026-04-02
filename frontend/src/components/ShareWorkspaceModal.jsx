@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './ShareWorkspaceModal.css';
 
-export default function ShareWorkspaceModal({ workspace, onClose }) {
+export default function ShareWorkspaceModal({ workspace, onClose, onShareCreated }) {
   const [loading, setLoading] = useState(false);
   const [shareData, setShareData] = useState(null);
   const [error, setError] = useState('');
@@ -62,6 +62,9 @@ export default function ShareWorkspaceModal({ workspace, onClose }) {
       }
 
       setShareData(data);
+      if (onShareCreated) {
+        onShareCreated(workspace.workspaceId, data.shareToken);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -73,32 +76,6 @@ export default function ShareWorkspaceModal({ workspace, onClose }) {
     navigator.clipboard.writeText(shareData.shareUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const revokeShareLink = async () => {
-    if (!confirm('Are you sure you want to revoke this share link?')) {
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/workspace/${workspace.workspaceId}/share`,
-        {
-          method: 'DELETE',
-          credentials: 'include'
-        }
-      );
-
-      if (response.ok) {
-        alert('Share link revoked successfully');
-        onClose();
-      } else {
-        const data = await response.json().catch(() => ({}));
-        alert(data.error || 'Failed to revoke share link');
-      }
-    } catch {
-      alert('Failed to revoke share link');
-    }
   };
 
   const showShareResult = shareData && !loadingExisting;
@@ -211,9 +188,6 @@ export default function ShareWorkspaceModal({ workspace, onClose }) {
               </div>
 
               <div className="share-actions">
-                <button className="btn-secondary" onClick={revokeShareLink}>
-                  Revoke Link
-                </button>
                 <button className="btn-primary" onClick={onClose}>
                   Done
                 </button>
