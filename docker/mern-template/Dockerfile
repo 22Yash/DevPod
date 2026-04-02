@@ -16,8 +16,8 @@ RUN apt-get update && \
     dos2unix \
     && rm -rf /var/lib/apt/lists/*
 
-# Install code-server
-RUN curl -fsSL https://code-server.dev/install.sh | sh && \
+# Install code-server (pinned to 4.96.4 — proxy routes confirmed working)
+RUN curl -fsSL https://code-server.dev/install.sh | sh -s -- --version 4.96.4 && \
     code-server --version
 
 # Install global packages for MERN development
@@ -54,10 +54,6 @@ RUN npm install --silent
 
 # Return to workspace root
 WORKDIR /workspace
-
-# Make code-server PORTS tab and "Open in Browser" use /absproxy/ links.
-# Relative path so it works regardless of the Docker-mapped external port.
-ENV VSCODE_PROXY_URI="/absproxy/{{port}}/"
 
 # Expose ports: code-server, frontend dev server, backend API
 EXPOSE 8080 3000 5000
