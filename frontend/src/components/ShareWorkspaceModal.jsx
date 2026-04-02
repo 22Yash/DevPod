@@ -73,16 +73,35 @@ export default function ShareWorkspaceModal({ workspace, onClose }) {
   return (
     <div className="share-modal-overlay" onClick={onClose}>
       <div
-        className="share-modal-content bg-zinc-900 border border-zinc-800 rounded-xl w-[90%] max-w-[500px] max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="share-modal-content rounded-xl w-[90%] max-w-[500px] max-h-[90vh] overflow-y-auto"
+        style={{
+          backgroundColor: '#16161a',
+          border: '1px solid #1e1e24',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-800">
-          <h2 className="text-lg font-semibold text-zinc-100 m-0">Share Workspace</h2>
+        <div
+          className="flex items-center justify-between px-6 py-5"
+          style={{ borderBottom: '1px solid #1e1e24' }}
+        >
+          <h2 className="text-lg font-semibold m-0" style={{ color: '#e8e8ed' }}>
+            Share Workspace
+          </h2>
           <button
-            className="text-zinc-500 hover:text-zinc-300 bg-transparent border-none text-xl cursor-pointer w-8 h-8 flex items-center justify-center rounded-md transition-colors hover:bg-zinc-800"
+            className="bg-transparent border-none text-xl cursor-pointer w-8 h-8 flex items-center justify-center rounded-md transition-colors"
+            style={{ color: '#4a4a58' }}
             onClick={onClose}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = '#9898a8';
+              e.currentTarget.style.backgroundColor = '#1a1a20';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '#4a4a58';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <line x1="3" y1="3" x2="13" y2="13" />
               <line x1="13" y1="3" x2="3" y2="13" />
             </svg>
@@ -90,9 +109,23 @@ export default function ShareWorkspaceModal({ workspace, onClose }) {
         </div>
 
         <div className="px-6 py-5">
-          <div className="mb-5 p-4 bg-zinc-800/50 rounded-lg border border-zinc-800">
-            <h3 className="text-zinc-100 text-base font-medium m-0 mb-2">{workspace.name}</h3>
-            <span className="inline-block px-3 py-1 bg-amber-500/15 text-amber-400 rounded text-xs font-medium font-mono">
+          <div
+            className="mb-5 p-4 rounded-lg"
+            style={{
+              backgroundColor: '#111114',
+              border: '1px solid #1e1e24',
+            }}
+          >
+            <h3 className="text-base font-medium m-0 mb-2" style={{ color: '#e8e8ed' }}>
+              {workspace.name}
+            </h3>
+            <span
+              className="inline-block px-3 py-1 rounded text-xs font-medium font-mono"
+              style={{
+                backgroundColor: 'rgba(240, 180, 41, 0.1)',
+                color: '#f0b429',
+              }}
+            >
               {workspace.template}
             </span>
           </div>
@@ -101,7 +134,7 @@ export default function ShareWorkspaceModal({ workspace, onClose }) {
             <>
               <div className="mb-5 space-y-5">
                 <div>
-                  <label className="block mb-2 text-sm font-medium text-zinc-300">
+                  <label className="block mb-2 text-sm font-medium" style={{ color: '#9898a8' }}>
                     Expires In (hours)
                   </label>
                   <input
@@ -111,13 +144,29 @@ export default function ShareWorkspaceModal({ workspace, onClose }) {
                     min="1"
                     max="168"
                     placeholder="24"
-                    className="w-full px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-md text-zinc-200 text-sm focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-colors placeholder:text-zinc-500"
+                    className="w-full px-3 py-2.5 rounded-md text-sm transition-colors"
+                    style={{
+                      backgroundColor: '#111114',
+                      border: '1px solid #22222a',
+                      color: '#e8e8ed',
+                      outline: 'none',
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(240, 180, 41, 0.4)';
+                      e.currentTarget.style.boxShadow = '0 0 0 1px rgba(240, 180, 41, 0.15)';
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = '#22222a';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
                   />
-                  <p className="mt-1.5 text-xs text-zinc-500">Link will expire after this many hours (max 7 days)</p>
+                  <p className="mt-1.5 text-xs m-0" style={{ color: '#4a4a58' }}>
+                    Link will expire after this many hours (max 7 days)
+                  </p>
                 </div>
 
                 <div>
-                  <label className="block mb-2 text-sm font-medium text-zinc-300">
+                  <label className="block mb-2 text-sm font-medium" style={{ color: '#9898a8' }}>
                     Max Clones (optional)
                   </label>
                   <input
@@ -126,47 +175,87 @@ export default function ShareWorkspaceModal({ workspace, onClose }) {
                     onChange={(e) => setMaxClones(e.target.value)}
                     min="1"
                     placeholder="Unlimited"
-                    className="w-full px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-md text-zinc-200 text-sm focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-colors placeholder:text-zinc-500"
+                    className="w-full px-3 py-2.5 rounded-md text-sm transition-colors"
+                    style={{
+                      backgroundColor: '#111114',
+                      border: '1px solid #22222a',
+                      color: '#e8e8ed',
+                      outline: 'none',
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(240, 180, 41, 0.4)';
+                      e.currentTarget.style.boxShadow = '0 0 0 1px rgba(240, 180, 41, 0.15)';
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = '#22222a';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
                   />
-                  <p className="mt-1.5 text-xs text-zinc-500">Maximum number of times this workspace can be cloned</p>
+                  <p className="mt-1.5 text-xs m-0" style={{ color: '#4a4a58' }}>
+                    Maximum number of times this workspace can be cloned
+                  </p>
                 </div>
               </div>
 
               {error && (
-                <div className="mb-4 px-3 py-2.5 bg-red-500/10 border border-red-500/20 rounded-md text-red-400 text-sm">
+                <div
+                  className="mb-4 px-3 py-2.5 rounded-md text-sm"
+                  style={{
+                    backgroundColor: 'rgba(255, 107, 107, 0.08)',
+                    border: '1px solid rgba(255, 107, 107, 0.15)',
+                    color: '#ff6b6b',
+                  }}
+                >
                   {error}
                 </div>
               )}
 
               <button
-                className="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-400 disabled:bg-zinc-700 disabled:text-zinc-500 text-zinc-900 font-semibold text-sm rounded-md cursor-pointer transition-colors disabled:cursor-not-allowed"
+                className="w-full py-2.5 px-4 font-semibold text-sm rounded-md cursor-pointer transition-colors border-none"
+                style={{
+                  backgroundColor: loading ? '#1e1e24' : '#f0b429',
+                  color: loading ? '#4a4a58' : '#111114',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                }}
                 onClick={generateShareLink}
                 disabled={loading}
+                onMouseEnter={(e) => {
+                  if (!loading) e.currentTarget.style.backgroundColor = '#f5c240';
+                }}
+                onMouseLeave={(e) => {
+                  if (!loading) e.currentTarget.style.backgroundColor = '#f0b429';
+                }}
               >
                 {loading ? 'Creating Share Link...' : 'Generate Share Link'}
               </button>
             </>
           ) : (
             <>
-              <div className="flex items-center gap-2 mb-4 text-emerald-400 text-sm font-medium">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="2 8 6 12 14 4" />
+              <div className="flex items-center gap-2 mb-4 text-sm font-medium" style={{ color: '#4ade80' }}>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 8 6.5 11.5 13 5" />
                 </svg>
-                Share link created successfully
+                Share link created
               </div>
 
-              <div className="mb-4 px-3 py-2.5 bg-zinc-800/50 rounded-md text-sm text-zinc-400 space-y-1">
+              <div
+                className="mb-4 px-3 py-2.5 rounded-md text-sm space-y-1"
+                style={{
+                  backgroundColor: '#111114',
+                  border: '1px solid #1e1e24',
+                }}
+              >
                 <div>
-                  <span className="text-zinc-500">Files:</span>{' '}
-                  <span className="text-zinc-300">{shareData.fileCount}</span>
-                  <span className="mx-2 text-zinc-700">|</span>
-                  <span className="text-zinc-500">Size:</span>{' '}
-                  <span className="text-zinc-300">{(shareData.totalSize / 1024).toFixed(2)} KB</span>
+                  <span style={{ color: '#4a4a58' }}>Files:</span>{' '}
+                  <span style={{ color: '#9898a8' }}>{shareData.fileCount}</span>
+                  <span className="mx-2" style={{ color: '#1e1e24' }}>|</span>
+                  <span style={{ color: '#4a4a58' }}>Size:</span>{' '}
+                  <span style={{ color: '#9898a8' }}>{(shareData.totalSize / 1024).toFixed(2)} KB</span>
                 </div>
                 {shareData.expiresAt && (
                   <div>
-                    <span className="text-zinc-500">Expires:</span>{' '}
-                    <span className="text-zinc-300">{new Date(shareData.expiresAt).toLocaleString()}</span>
+                    <span style={{ color: '#4a4a58' }}>Expires:</span>{' '}
+                    <span style={{ color: '#9898a8' }}>{new Date(shareData.expiresAt).toLocaleString()}</span>
                   </div>
                 )}
               </div>
@@ -176,11 +265,23 @@ export default function ShareWorkspaceModal({ workspace, onClose }) {
                   type="text"
                   value={shareData.shareUrl}
                   readOnly
-                  className="flex-1 px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-md text-zinc-300 text-sm font-mono focus:outline-none min-w-0"
+                  className="flex-1 px-3 py-2.5 rounded-md text-sm font-mono min-w-0"
+                  style={{
+                    backgroundColor: '#111114',
+                    border: '1px solid #22222a',
+                    color: '#9898a8',
+                    outline: 'none',
+                  }}
                 />
                 <button
-                  className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-900 font-semibold text-sm rounded-md cursor-pointer transition-colors whitespace-nowrap border-none"
+                  className="px-4 py-2.5 font-semibold text-sm rounded-md cursor-pointer transition-colors whitespace-nowrap border-none"
+                  style={{
+                    backgroundColor: '#f0b429',
+                    color: '#111114',
+                  }}
                   onClick={copyToClipboard}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f5c240'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f0b429'; }}
                 >
                   {copied ? 'Copied' : 'Copy'}
                 </button>
@@ -188,14 +289,33 @@ export default function ShareWorkspaceModal({ workspace, onClose }) {
 
               <div className="flex gap-3 justify-end">
                 <button
-                  className="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-medium rounded-md cursor-pointer transition-colors border border-zinc-700"
+                  className="px-4 py-2.5 text-sm font-medium rounded-md cursor-pointer transition-colors"
+                  style={{
+                    backgroundColor: '#16161a',
+                    border: '1px solid #1e1e24',
+                    color: '#9898a8',
+                  }}
                   onClick={revokeShareLink}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#1a1a20';
+                    e.currentTarget.style.borderColor = '#2a2a35';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#16161a';
+                    e.currentTarget.style.borderColor = '#1e1e24';
+                  }}
                 >
                   Revoke Link
                 </button>
                 <button
-                  className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-900 text-sm font-semibold rounded-md cursor-pointer transition-colors border-none"
+                  className="px-4 py-2.5 text-sm font-semibold rounded-md cursor-pointer transition-colors border-none"
+                  style={{
+                    backgroundColor: '#f0b429',
+                    color: '#111114',
+                  }}
                   onClick={onClose}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f5c240'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f0b429'; }}
                 >
                   Done
                 </button>

@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react';
-// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Monitor, Rocket, Code, Settings, Plus, Search,
+  Monitor, Rocket, Code, Plus, Search,
   Users, Clock, FolderOpen, GitBranch, Share2, Play, Activity, LogOut,
-  Square, Trash2
+  Square, Trash2, Terminal, ExternalLink
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ShareWorkspaceModal from '../../components/ShareWorkspaceModal';
+
+const TEMPLATE_COLORS = {
+  python: '#3572A5',
+  nodejs: '#68A063',
+  mern: '#4DB33D',
+  java: '#ED8B00',
+};
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -230,32 +236,11 @@ const Dashboard = () => {
   };
 
   const templates = [
-    { id: 3, name: 'Python Development', description: 'Python environment with code-server IDE', icon: '🐍', tags: ['Backend', 'Python', 'API'], uses: 120 },
-    { id: 4, name: 'Node.js Backend', description: 'Node.js and Express development environment', icon: '⚙️', tags: ['Backend', 'Node.js', 'Express'], uses: 80 },
-    { id: 5, name: 'MERN Stack', description: 'MongoDB, Express, React, Node.js full-stack environment', icon: '🍃', tags: ['Full-Stack', 'MongoDB', 'React'], featured: true, uses: 200 },
-    { id: 6, name: 'Java Development', description: 'Java 17 with Maven, Gradle, and code-server IDE', icon: '☕', tags: ['Backend', 'Java', 'Maven', 'Gradle'], uses: 95 }
+    { id: 3, name: 'Python Development', description: 'Python 3.10 with Flask, FastAPI, and common packages', key: 'python', uses: 120 },
+    { id: 4, name: 'Node.js Backend', description: 'Node 20 with Express, npm, and build tools', key: 'nodejs', uses: 80 },
+    { id: 5, name: 'MERN Stack', description: 'MongoDB, Express, React, Node.js full-stack', key: 'mern', featured: true, uses: 200 },
+    { id: 6, name: 'Java Development', description: 'JDK 17 with Maven, Gradle, and code-server', key: 'java', uses: 95 }
   ];
-
-  const fadeInUp = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1, y: 0,
-      transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }
-    }
-  };
-
-  const stagger = {
-    visible: { transition: { staggerChildren: 0.1 } }
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'running': return 'text-green-400 bg-green-400/10';
-      case 'stopped': return 'text-slate-400 bg-slate-400/10';
-      case 'starting': return 'text-yellow-400 bg-yellow-400/10';
-      default: return 'text-slate-400 bg-slate-400/10';
-    }
-  };
 
   const formatAction = (action) => {
     const labels = {
@@ -280,252 +265,234 @@ const Dashboard = () => {
     return matchesSearch && matchesFilter;
   });
 
-  const getStatusDot = (status) => {
-    switch (status) {
-      case 'running': return 'bg-green-400';
-      case 'stopped': return 'bg-zinc-500';
-      case 'starting': return 'bg-yellow-400';
-      default: return 'bg-zinc-500';
-    }
+  const fade = {
+    hidden: { opacity: 0, y: 8 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.35 } },
   };
 
   return (
-    <div className="bg-zinc-950 text-zinc-100 min-h-screen">
-      {/* Navigation */}
-      <motion.nav
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        className="bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800 sticky top-0 z-50"
-      >
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center">
-                <Code className="w-5 h-5 text-zinc-950" />
-              </div>
-              <span className="text-xl font-bold tracking-tight">DevPod</span>
-            </div>
+    <div className="min-h-screen" style={{ background: '#111114', color: '#e8e8ed' }}>
 
-            <div className="flex items-center space-x-4">
-              {user && (
-                <div className="flex items-center space-x-2 text-sm text-zinc-400">
-                  {user.avatar_url ? (
-                    <img src={user.avatar_url} alt={user.login} className="w-7 h-7 rounded-full border border-zinc-700" />
-                  ) : (
-                    <div className="w-7 h-7 bg-zinc-800 rounded-full flex items-center justify-center border border-zinc-700">
-                      <span className="text-xs font-medium text-zinc-300">{user.login ? user.login[0].toUpperCase() : "?"}</span>
-                    </div>
-                  )}
-                  <span className="text-zinc-300">{user.name || user.login}</span>
-                </div>
-              )}
-              <button
-                onClick={handleLogout}
-                className="p-2 text-zinc-500 hover:text-red-400 rounded-lg transition-colors"
-                title="Logout"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
+      {/* ── Top bar ── */}
+      <nav className="sticky top-0 z-50 h-14 flex items-center px-6" style={{ background: 'rgba(17,17,20,0.88)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #1e1e24' }}>
+        <div className="max-w-7xl w-full mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: '#f0b429' }}>
+              <Terminal className="w-3.5 h-3.5" style={{ color: '#111114' }} />
             </div>
+            <span className="font-semibold text-sm tracking-tight">DevPod</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {user && (
+              <div className="flex items-center gap-2 text-sm" style={{ color: '#7a7a8e' }}>
+                {user.avatar_url ? (
+                  <img src={user.avatar_url} alt={user.login} className="w-6 h-6 rounded-full" style={{ border: '1px solid #22222a' }} />
+                ) : (
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium" style={{ background: '#22222a', color: '#7a7a8e' }}>
+                    {user.login ? user.login[0].toUpperCase() : '?'}
+                  </div>
+                )}
+                <span className="text-xs">{user.name || user.login}</span>
+              </div>
+            )}
+            <button onClick={handleLogout} className="p-1.5 rounded transition-colors" style={{ color: '#4a4a58' }} title="Logout"
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#ff6b6b')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#4a4a58')}
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
-      </motion.nav>
+      </nav>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Header */}
-        <motion.div initial="hidden" animate="visible" variants={stagger} className="mb-8">
-          <motion.div variants={fadeInUp} className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight">
-                Welcome back, {user?.name || user?.login || "Developer"}
-              </h1>
+
+        {/* ── Header + Stats ── */}
+        <div className="flex items-start justify-between mb-8">
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight mb-4">
+              Welcome back, {user?.name || user?.login || 'Developer'}
+            </h1>
+            <div className="flex items-center gap-6 text-xs" style={{ color: '#5a5a6a' }}>
+              {[
+                { label: 'active', value: stats.activeWorkspaces },
+                { label: 'projects', value: stats.totalProjects },
+                { label: 'collaborators', value: stats.collaborators },
+                { label: 'hours saved', value: stats.hoursSaved },
+              ].map((s, i) => (
+                <span key={i}>
+                  <span className="font-semibold text-sm" style={{ color: '#e8e8ed' }}>{s.value}</span>{' '}
+                  {s.label}
+                </span>
+              ))}
             </div>
-            <button
-              onClick={() => setActiveTab('templates')}
-              className="bg-amber-500 hover:bg-amber-400 text-zinc-950 px-5 py-2.5 rounded-lg font-medium flex items-center space-x-2 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              <span>New Workspace</span>
-            </button>
-          </motion.div>
-
-          {/* Stats Cards */}
-          <motion.div variants={fadeInUp} className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-8">
-            {[
-              { label: 'Active Workspaces', value: stats.activeWorkspaces, icon: <Monitor className="w-4 h-4" /> },
-              { label: 'Total Projects', value: stats.totalProjects, icon: <FolderOpen className="w-4 h-4" /> },
-              { label: 'Collaborators', value: stats.collaborators, icon: <Users className="w-4 h-4" /> },
-              { label: 'Hours Saved', value: stats.hoursSaved, icon: <Clock className="w-4 h-4" /> }
-            ].map((stat, index) => (
-              <div key={index} className="bg-zinc-900 px-5 py-4 rounded-lg border border-zinc-800">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-zinc-500 text-xs uppercase tracking-wide">{stat.label}</p>
-                    <p className="text-xl font-semibold mt-1 text-zinc-100">{stat.value}</p>
-                  </div>
-                  <div className="text-zinc-600">
-                    {stat.icon}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </motion.div>
-        </motion.div>
-
-        {/* Tab Navigation */}
-        <motion.div initial="hidden" animate="visible" variants={fadeInUp} className="mb-8">
-          <div className="flex items-center space-x-6 border-b border-zinc-800">
-            {[
-              { id: 'workspaces', label: 'My Workspaces', icon: <Monitor className="w-4 h-4" /> },
-              { id: 'templates', label: 'Templates', icon: <Rocket className="w-4 h-4" /> },
-              { id: 'activity', label: 'Activity', icon: <Activity className="w-4 h-4" /> }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  setActiveTab(tab.id);
-                  if (tab.id === 'activity') loadActivities();
-                }}
-                className={`flex items-center space-x-2 pb-3 text-sm transition-colors border-b-2 -mb-px ${
-                  activeTab === tab.id
-                    ? 'border-amber-500 text-zinc-100'
-                    : 'border-transparent text-zinc-500 hover:text-zinc-300'
-                }`}
-              >
-                {tab.icon}
-                <span>{tab.label}</span>
-              </button>
-            ))}
           </div>
-        </motion.div>
+          <button
+            onClick={() => setActiveTab('templates')}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 hover:brightness-110"
+            style={{ background: '#f0b429', color: '#111114' }}
+          >
+            <Plus className="w-4 h-4" />
+            New Workspace
+          </button>
+        </div>
 
-        {/* Content based on active tab */}
+        {/* ── Tabs ── */}
+        <div className="flex items-center gap-6 mb-8" style={{ borderBottom: '1px solid #1e1e24' }}>
+          {[
+            { id: 'workspaces', label: 'Workspaces', icon: <Monitor className="w-3.5 h-3.5" /> },
+            { id: 'templates', label: 'Templates', icon: <Rocket className="w-3.5 h-3.5" /> },
+            { id: 'activity', label: 'Activity', icon: <Activity className="w-3.5 h-3.5" /> },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => { setActiveTab(tab.id); if (tab.id === 'activity') loadActivities(); }}
+              className="flex items-center gap-1.5 pb-3 text-xs font-medium -mb-px transition-colors"
+              style={{
+                borderBottom: activeTab === tab.id ? '2px solid #f0b429' : '2px solid transparent',
+                color: activeTab === tab.id ? '#e8e8ed' : '#5a5a6a',
+              }}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Content ── */}
         <AnimatePresence mode="wait">
-          {/* Workspaces Tab */}
+
+          {/* Workspaces */}
           {activeTab === 'workspaces' && (
-            <motion.div key="workspaces" initial="hidden" animate="visible" exit="hidden" variants={stagger}>
-              {/* Search and Filter */}
-              <motion.div variants={fadeInUp} className="flex flex-col md:flex-row gap-3 mb-6">
+            <motion.div key="workspaces" initial="hidden" animate="show" exit="hidden" variants={{ show: { transition: { staggerChildren: 0.04 } }, hidden: {} }}>
+              <motion.div variants={fade} className="flex gap-3 mb-5">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: '#4a4a58' }} />
                   <input
                     type="text"
                     placeholder="Search workspaces..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-600 transition-colors"
+                    className="w-full pl-9 pr-4 py-2 rounded-lg text-xs focus:outline-none transition-colors"
+                    style={{ background: '#16161a', border: '1px solid #22222a', color: '#e8e8ed' }}
+                    onFocus={(e) => (e.target.style.borderColor = '#33333d')}
+                    onBlur={(e) => (e.target.style.borderColor = '#22222a')}
                   />
                 </div>
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="px-4 py-2.5 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-zinc-300 focus:outline-none focus:border-zinc-600 transition-colors"
+                  className="px-3 py-2 rounded-lg text-xs focus:outline-none"
+                  style={{ background: '#16161a', border: '1px solid #22222a', color: '#9898a8' }}
                 >
-                  <option value="all">All Status</option>
+                  <option value="all">All</option>
                   <option value="running">Running</option>
                   <option value="stopped">Stopped</option>
                 </select>
               </motion.div>
 
-              {/* Workspaces Grid */}
               {filteredWorkspaces.length === 0 ? (
-                <motion.div variants={fadeInUp} className="text-center py-16 bg-zinc-900 rounded-lg border border-zinc-800">
-                  <FolderOpen className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2 text-zinc-300">No workspaces yet</h3>
-                  <p className="text-zinc-500 text-sm mb-6">Create your first workspace to get started</p>
+                <motion.div variants={fade} className="text-center py-20 rounded-xl" style={{ background: '#16161a', border: '1px solid #1e1e24' }}>
+                  <FolderOpen className="w-10 h-10 mx-auto mb-3" style={{ color: '#2a2a35' }} />
+                  <p className="text-sm font-medium mb-1" style={{ color: '#7a7a8e' }}>No workspaces yet</p>
+                  <p className="text-xs mb-5" style={{ color: '#4a4a58' }}>Launch one from the Templates tab</p>
                   <button
                     onClick={() => setActiveTab('templates')}
-                    className="bg-amber-500 hover:bg-amber-400 text-zinc-950 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors"
+                    className="text-xs font-medium px-4 py-2 rounded-lg transition-colors"
+                    style={{ background: '#f0b429', color: '#111114' }}
                   >
                     Browse Templates
                   </button>
                 </motion.div>
               ) : (
-                <motion.div variants={stagger} className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                <motion.div variants={{ show: { transition: { staggerChildren: 0.03 } }, hidden: {} }} className="rounded-xl overflow-hidden" style={{ border: '1px solid #1e1e24' }}>
+                  {/* Table header */}
+                  <div className="grid grid-cols-[1fr_120px_100px_140px_140px] gap-4 px-5 py-2.5 text-[10px] font-semibold uppercase tracking-wider" style={{ background: '#16161a', color: '#4a4a58', borderBottom: '1px solid #1e1e24' }}>
+                    <span>Workspace</span>
+                    <span>Template</span>
+                    <span>Status</span>
+                    <span>Last accessed</span>
+                    <span className="text-right">Actions</span>
+                  </div>
+
                   {filteredWorkspaces.map((workspace) => {
                     const isLoading = actionLoading === workspace.workspaceId;
+                    const tColor = TEMPLATE_COLORS[workspace.template] || '#5a5a6a';
                     return (
                       <motion.div
                         key={workspace._id || workspace.id}
-                        variants={fadeInUp}
-                        className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 hover:border-zinc-700 transition-colors duration-200"
+                        variants={fade}
+                        className="grid grid-cols-[1fr_120px_100px_140px_140px] gap-4 items-center px-5 py-3.5 transition-colors duration-150"
+                        style={{ borderBottom: '1px solid #1e1e24', background: '#111114' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = '#14141a')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = '#111114')}
                       >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2.5 mb-1.5">
-                              <span className={`w-2 h-2 rounded-full flex-shrink-0 ${getStatusDot(workspace.status)}`} />
-                              <h3 className="text-base font-medium text-zinc-100">{workspace.name}</h3>
-                            </div>
-                            <p className="text-zinc-500 text-sm ml-[18px]">{workspace.description}</p>
-                          </div>
+                        {/* Name */}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate" style={{ color: '#e8e8ed' }}>{workspace.name}</p>
+                          <p className="text-[11px] truncate mt-0.5" style={{ color: '#4a4a58' }}>{workspace.description}</p>
                         </div>
 
-                        <div className="flex items-center space-x-4 text-xs text-zinc-500 mb-4 ml-[18px]">
-                          <div className="flex items-center space-x-1">
-                            <Code className="w-3.5 h-3.5" />
-                            <span>{workspace.template}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <GitBranch className="w-3.5 h-3.5" />
-                            <span>{workspace.branches || 1}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Users className="w-3.5 h-3.5" />
-                            <span>{workspace.collaborators?.length || 0}</span>
-                          </div>
+                        {/* Template */}
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: tColor }} />
+                          <span className="text-xs font-mono" style={{ color: '#7a7a8e' }}>{workspace.template}</span>
                         </div>
 
-                        <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
-                          <div>
-                            <p className="text-xs text-zinc-600">Last accessed</p>
-                            <p className="text-xs text-zinc-400 mt-0.5">
-                              {new Date(workspace.lastAccessed).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <div className="flex items-center space-x-1.5">
-                            {workspace.status === 'running' ? (
-                              <>
-                                <button
-                                  onClick={() => window.open(`http://localhost:${workspace.idePort}`, '_blank')}
-                                  className="bg-amber-500 hover:bg-amber-400 text-zinc-950 px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors"
-                                >
-                                  Open
-                                </button>
-                                <button
-                                  onClick={() => setShareWorkspace(workspace)}
-                                  className="p-1.5 text-zinc-500 hover:text-zinc-300 rounded-md transition-colors"
-                                  title="Share"
-                                >
-                                  <Share2 className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => stopWorkspace(workspace.workspaceId)}
-                                  disabled={isLoading}
-                                  className="p-1.5 text-zinc-500 hover:text-yellow-400 rounded-md transition-colors disabled:opacity-50"
-                                  title="Stop"
-                                >
-                                  <Square className="w-3.5 h-3.5" />
-                                </button>
-                              </>
-                            ) : (
+                        {/* Status */}
+                        <div className="flex items-center gap-1.5">
+                          <div className={`w-1.5 h-1.5 rounded-full ${workspace.status === 'running' ? 'bg-green-400' : 'bg-zinc-600'}`} />
+                          <span className="text-xs" style={{ color: workspace.status === 'running' ? '#4ade80' : '#5a5a6a' }}>{workspace.status}</span>
+                        </div>
+
+                        {/* Last accessed */}
+                        <span className="text-xs font-mono" style={{ color: '#4a4a58' }}>
+                          {new Date(workspace.lastAccessed).toLocaleDateString()}
+                        </span>
+
+                        {/* Actions */}
+                        <div className="flex items-center justify-end gap-1">
+                          {workspace.status === 'running' ? (
+                            <>
                               <button
-                                onClick={() => startWorkspace(workspace.workspaceId)}
-                                disabled={isLoading}
-                                className="bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 px-3.5 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center space-x-1 disabled:opacity-50"
+                                onClick={() => window.open(`http://localhost:${workspace.idePort}`, '_blank')}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-all duration-150 hover:brightness-110"
+                                style={{ background: '#f0b429', color: '#111114' }}
                               >
-                                <Play className="w-3 h-3" />
-                                <span>{isLoading ? 'Starting...' : 'Start'}</span>
+                                <ExternalLink className="w-3 h-3" />
+                                Open
                               </button>
-                            )}
+                              <button onClick={() => setShareWorkspace(workspace)} className="p-1.5 rounded-md transition-colors" style={{ color: '#4a4a58' }} title="Share"
+                                onMouseEnter={(e) => (e.currentTarget.style.color = '#7a7a8e')}
+                                onMouseLeave={(e) => (e.currentTarget.style.color = '#4a4a58')}
+                              >
+                                <Share2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button onClick={() => stopWorkspace(workspace.workspaceId)} disabled={isLoading} className="p-1.5 rounded-md transition-colors disabled:opacity-40" style={{ color: '#4a4a58' }} title="Stop"
+                                onMouseEnter={(e) => (e.currentTarget.style.color = '#fbbf24')}
+                                onMouseLeave={(e) => (e.currentTarget.style.color = '#4a4a58')}
+                              >
+                                <Square className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          ) : (
                             <button
-                              onClick={() => deleteWorkspace(workspace.workspaceId, workspace.name)}
+                              onClick={() => startWorkspace(workspace.workspaceId)}
                               disabled={isLoading}
-                              className="p-1.5 text-zinc-500 hover:text-red-400 rounded-md transition-colors disabled:opacity-50"
-                              title="Delete"
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors disabled:opacity-40"
+                              style={{ background: '#1e1e24', color: '#9898a8', border: '1px solid #2a2a35' }}
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Play className="w-3 h-3" />
+                              {isLoading ? 'Starting...' : 'Start'}
                             </button>
-                          </div>
+                          )}
+                          <button onClick={() => deleteWorkspace(workspace.workspaceId, workspace.name)} disabled={isLoading} className="p-1.5 rounded-md transition-colors disabled:opacity-40" style={{ color: '#4a4a58' }} title="Delete"
+                            onMouseEnter={(e) => (e.currentTarget.style.color = '#ff6b6b')}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = '#4a4a58')}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </motion.div>
                     );
@@ -535,84 +502,84 @@ const Dashboard = () => {
             </motion.div>
           )}
 
-          {/* Templates Tab */}
+          {/* Templates */}
           {activeTab === 'templates' && (
-            <motion.div key="templates" initial="hidden" animate="visible" exit="hidden" variants={stagger}>
-              <motion.div variants={fadeInUp}>
-                <h2 className="text-lg font-semibold mb-4 text-zinc-100">All Templates</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {templates.map((template) => {
-                    const isTemplateLaunching = launchingTemplateId === template.id;
-                    return (
-                      <motion.div
-                        key={template.id}
-                        variants={fadeInUp}
-                        className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 hover:border-zinc-700 transition-colors duration-200"
-                      >
-                        <div className="mb-3">
-                          <h4 className="font-mono text-sm font-medium text-zinc-100">{template.name}</h4>
-                          <p className="text-xs text-zinc-500 mt-1">{template.description}</p>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-zinc-600">{template.uses} uses</span>
-                          <button
-                            onClick={() => launchWorkspace(template)}
-                            className="bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 px-3 py-1.5 rounded-md text-xs font-medium transition-colors disabled:opacity-50"
-                            disabled={isTemplateLaunching}
-                          >
-                            {isTemplateLaunching ? 'Launching...' : 'Use'}
-                          </button>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </motion.div>
+            <motion.div key="templates" initial="hidden" animate="show" exit="hidden" variants={{ show: { transition: { staggerChildren: 0.06 } }, hidden: {} }}>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {templates.map((template) => {
+                  const isTemplateLaunching = launchingTemplateId === template.id;
+                  const tColor = TEMPLATE_COLORS[template.key] || '#5a5a6a';
+                  return (
+                    <motion.div
+                      key={template.id}
+                      variants={fade}
+                      className="rounded-xl p-5 transition-colors duration-200 group"
+                      style={{ background: '#16161a', border: '1px solid #22222a', borderTop: `2px solid ${tColor}` }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = '#1a1a20')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = '#16161a')}
+                    >
+                      <div className="mb-4">
+                        <h3 className="text-sm font-semibold mb-1" style={{ color: '#e8e8ed' }}>{template.name}</h3>
+                        <p className="text-xs leading-relaxed" style={{ color: '#5a5a6a' }}>{template.description}</p>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono" style={{ color: '#3a3a45' }}>{template.uses} launches</span>
+                        <button
+                          onClick={() => launchWorkspace(template)}
+                          disabled={isTemplateLaunching}
+                          className="px-4 py-1.5 rounded-md text-xs font-medium transition-all duration-150 disabled:opacity-40 hover:brightness-110"
+                          style={{ background: '#f0b429', color: '#111114' }}
+                        >
+                          {isTemplateLaunching ? 'Launching...' : 'Launch'}
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
             </motion.div>
           )}
 
-          {/* Activity Tab */}
+          {/* Activity */}
           {activeTab === 'activity' && (
-            <motion.div key="activity" initial="hidden" animate="visible" exit="hidden" variants={stagger}>
-              <motion.div variants={fadeInUp} className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
-                <h2 className="text-lg font-semibold mb-5 text-zinc-100">Recent Activity</h2>
-                <div className="space-y-1">
-                  {activities.length === 0 ? (
-                    <div className="text-center py-10 text-zinc-500">
-                      <Activity className="w-10 h-10 mx-auto mb-3 opacity-40" />
-                      <p className="text-sm">No activity yet. Launch a workspace to get started!</p>
-                    </div>
-                  ) : (
-                    activities.map((activity) => (
-                      <div key={activity._id} className="flex items-center justify-between py-3 px-3 rounded-md hover:bg-zinc-800/50 transition-colors">
-                        <div className="flex items-center space-x-3 flex-1">
-                          <Activity className="w-3.5 h-3.5 text-zinc-600 flex-shrink-0" />
-                          <div>
-                            <p className="text-sm text-zinc-300">{formatAction(activity.action)}</p>
-                            <p className="text-xs text-zinc-600">
-                              {activity.workspaceId?.name || ''}
-                            </p>
-                          </div>
+            <motion.div key="activity" initial="hidden" animate="show" exit="hidden" variants={{ show: { transition: { staggerChildren: 0.03 } }, hidden: {} }}>
+              {activities.length === 0 ? (
+                <motion.div variants={fade} className="text-center py-20">
+                  <Activity className="w-8 h-8 mx-auto mb-3" style={{ color: '#2a2a35' }} />
+                  <p className="text-sm" style={{ color: '#4a4a58' }}>No activity yet</p>
+                </motion.div>
+              ) : (
+                <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #1e1e24' }}>
+                  {activities.map((activity, i) => (
+                    <motion.div
+                      key={activity._id}
+                      variants={fade}
+                      className="flex items-center justify-between px-5 py-3 transition-colors"
+                      style={{ borderBottom: i < activities.length - 1 ? '1px solid #1e1e24' : 'none', background: '#111114' }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = '#14141a')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = '#111114')}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#f0b429' }} />
+                        <div>
+                          <p className="text-xs font-medium" style={{ color: '#c8c8d0' }}>{formatAction(activity.action)}</p>
+                          <p className="text-[11px]" style={{ color: '#4a4a58' }}>{activity.workspaceId?.name || ''}</p>
                         </div>
-                        <p className="text-xs text-zinc-600 font-mono flex-shrink-0">
-                          {new Date(activity.timestamp).toLocaleString()}
-                        </p>
                       </div>
-                    ))
-                  )}
+                      <span className="text-[11px] font-mono" style={{ color: '#3a3a45' }}>
+                        {new Date(activity.timestamp).toLocaleString()}
+                      </span>
+                    </motion.div>
+                  ))}
                 </div>
-              </motion.div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* Share Workspace Modal */}
       {shareWorkspace && (
-        <ShareWorkspaceModal
-          workspace={shareWorkspace}
-          onClose={() => setShareWorkspace(null)}
-        />
+        <ShareWorkspaceModal workspace={shareWorkspace} onClose={() => setShareWorkspace(null)} />
       )}
     </div>
   );
