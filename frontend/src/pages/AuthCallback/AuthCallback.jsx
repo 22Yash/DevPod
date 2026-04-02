@@ -15,7 +15,6 @@ const AuthCallback = () => {
       const error = urlParams.get('error');
       const errorDescription = urlParams.get('error_description');
 
-      // Handle OAuth errors from GitHub
       if (error) {
         console.error('GitHub OAuth error:', error, errorDescription);
         alert(`Authentication failed: ${errorDescription || error}`);
@@ -32,14 +31,13 @@ const AuthCallback = () => {
 
       try {
         console.log('🔄 Exchanging authorization code for user data...');
-        
-        // Send code to backend
+
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/github`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          credentials: 'include', // Important: Send cookies with request
+          credentials: 'include',
           body: JSON.stringify({ code })
         });
 
@@ -50,36 +48,30 @@ const AuthCallback = () => {
         }
 
         const data = await response.json();
-        
-        // Check if authentication actually succeeded
+
         if (!data.success || !data.user) {
           console.error('Authentication failed:', data.error || 'No user data received');
           throw new Error(data.error || 'Authentication failed - no user data');
         }
-        
+
         console.log('✅ Authentication successful:', data.user?.login);
 
-        // Store user data in localStorage for quick access
         localStorage.setItem('user', JSON.stringify(data.user));
         localStorage.setItem('isLoggedIn', 'true');
 
-        // Show success message briefly
         console.log('🎉 Welcome,', data.user?.name || data.user?.login);
 
-        // Redirect to dashboard
         navigate('/dashboard');
       } catch (error) {
         console.error('❌ Error during authentication:', error.message);
-        
-        // Clear any partial localStorage data on error
+
         localStorage.removeItem('user');
         localStorage.removeItem('isLoggedIn');
-        
-        // Show user-friendly error message
-        const errorMessage = error.message.includes('fetch') 
+
+        const errorMessage = error.message.includes('fetch')
           ? 'Network error. Please check your connection and try again.'
           : error.message;
-          
+
         alert(`Authentication failed: ${errorMessage}`);
         navigate('/');
       }
@@ -89,14 +81,14 @@ const AuthCallback = () => {
   }, [navigate]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-slate-900">
+    <div className="flex items-center justify-center min-h-screen bg-zinc-950">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
-        <p className="text-white text-xl">Authenticating with GitHub...</p>
-        <p className="text-slate-400 text-sm mt-2">Please wait while we set up your account</p>
-        <div className="mt-4 text-xs text-slate-500">
-          This should only take a few seconds
+        <div className="relative w-12 h-12 mx-auto mb-6">
+          <div className="absolute inset-0 rounded-full border-2 border-zinc-800" />
+          <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-amber-500 animate-spin" />
         </div>
+        <p className="text-zinc-200 text-sm font-medium tracking-wide">Authenticating</p>
+        <p className="text-zinc-600 text-xs mt-2 font-mono">connecting to github...</p>
       </div>
     </div>
   );
