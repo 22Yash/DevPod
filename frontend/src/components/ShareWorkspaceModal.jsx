@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './ShareWorkspaceModal.css';
 
 export default function ShareWorkspaceModal({ workspace, onClose }) {
@@ -8,11 +8,39 @@ export default function ShareWorkspaceModal({ workspace, onClose }) {
   const [expiresIn, setExpiresIn] = useState(24);
   const [maxClones, setMaxClones] = useState('');
   const [copied, setCopied] = useState(false);
+  const [loadingExisting, setLoadingExisting] = useState(false);
+
+  // If workspace is already shared, load the existing share info
+  useEffect(() => {
+    if (workspace.isShared && workspace.shareToken) {
+      setLoadingExisting(true);
+      fetch(
+        `${import.meta.env.VITE_API_URL}/api/share/${workspace.shareToken}`,
+        { credentials: 'include' }
+      )
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data) {
+            const shareUrl = `${window.location.origin}/share/${workspace.shareToken}`;
+            setShareData({
+              shareUrl,
+              shareToken: workspace.shareToken,
+              fileCount: data.fileCount,
+              totalSize: data.files?.reduce((sum, f) => sum + f.size, 0) || 0,
+              expiresAt: data.expiresAt,
+              existing: true,
+            });
+          }
+        })
+        .catch(() => {})
+        .finally(() => setLoadingExisting(false));
+    }
+  }, [workspace]);
 
   const generateShareLink = async () => {
     setLoading(true);
     setError('');
-    
+
     try {
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/api/workspace/${workspace.workspaceId}/share`,
@@ -64,11 +92,17 @@ export default function ShareWorkspaceModal({ workspace, onClose }) {
       if (response.ok) {
         alert('Share link revoked successfully');
         onClose();
+      } else {
+        const data = await response.json().catch(() => ({}));
+        alert(data.error || 'Failed to revoke share link');
       }
     } catch {
       alert('Failed to revoke share link');
     }
   };
+
+  const showShareResult = shareData && !loadingExisting;
+  const showGenerateForm = !shareData && !loadingExisting;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -84,7 +118,13 @@ export default function ShareWorkspaceModal({ workspace, onClose }) {
             <p className="template-badge">{workspace.template}</p>
           </div>
 
-          {!shareData ? (
+          {loadingExisting && (
+            <p style={{ textAlign: 'center', color: '#6b7280', padding: '20px 0' }}>
+              Loading share info...
+            </p>
+          )}
+
+          {showGenerateForm && (
             <>
               <div className="share-options">
                 <div className="form-group">
@@ -123,12 +163,16 @@ export default function ShareWorkspaceModal({ workspace, onClose }) {
                 {loading ? 'Creating Share Link...' : 'Generate Share Link'}
               </button>
             </>
-          ) : (
+          )}
+
+          {showShareResult && (
             <>
-              <div className="share-success">
-                <div className="success-icon">✓</div>
-                <p>Share link created successfully!</p>
-              </div>
+              {!shareData.existing && (
+                <div className="share-success">
+                  <div className="success-icon">✓</div>
+                  <p>Share link created successfully!</p>
+                </div>
+              )}
 
               <div className="share-stats">
                 <div className="stat">

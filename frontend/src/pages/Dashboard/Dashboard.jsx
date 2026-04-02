@@ -26,6 +26,7 @@ const Dashboard = () => {
   const [activities, setActivities] = useState([]);
   const [actionLoading, setActionLoading] = useState(null);
   const [shareWorkspace, setShareWorkspace] = useState(null);
+  const [dashboardLoading, setDashboardLoading] = useState(true);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -37,23 +38,27 @@ const Dashboard = () => {
 
   const loadDashboardData = async () => {
     try {
-      const statsResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/workspaces/dashboard/stats`, {
-        credentials: 'include'
-      });
+      const [statsResponse, workspacesResponse] = await Promise.all([
+        fetch(`${import.meta.env.VITE_API_URL}/api/v1/workspaces/dashboard/stats`, {
+          credentials: 'include'
+        }),
+        fetch(`${import.meta.env.VITE_API_URL}/api/v1/workspaces/list`, {
+          credentials: 'include'
+        })
+      ]);
+
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
         setStats(statsData);
       }
-
-      const workspacesResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/workspaces/list`, {
-        credentials: 'include'
-      });
       if (workspacesResponse.ok) {
         const workspacesData = await workspacesResponse.json();
         setWorkspaces(workspacesData);
       }
     } catch (error) {
       console.error('Error loading dashboard data:', error);
+    } finally {
+      setDashboardLoading(false);
     }
   };
 
@@ -422,7 +427,12 @@ const Dashboard = () => {
               </motion.div>
 
               {/* Workspaces Grid */}
-              {filteredWorkspaces.length === 0 ? (
+              {dashboardLoading ? (
+                <motion.div variants={fadeInUp} className="text-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+                  <p className="text-slate-400 text-sm">Loading workspaces...</p>
+                </motion.div>
+              ) : filteredWorkspaces.length === 0 ? (
                 <motion.div variants={fadeInUp} className="text-center py-12 bg-slate-800 rounded-2xl border border-slate-700">
                   <FolderOpen className="w-16 h-16 text-slate-600 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold mb-2">No workspaces yet</h3>
