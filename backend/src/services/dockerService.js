@@ -12,13 +12,67 @@
         'java': 'devpod-java:latest',
     };
 
-    // All templates use the SAME config - only port 8080
-    // This is what works for Python and Node already
+    const MERN_FRONTEND_CONTAINER_PORT = '3000/tcp';
+    const MERN_BACKEND_CONTAINER_PORT = '5000/tcp';
+    const IDE_CONTAINER_PORT = '8080/tcp';
+
+    function getHostPort(info, containerPort) {
+        const binding = info?.NetworkSettings?.Ports?.[containerPort]?.[0]?.HostPort;
+        return binding ? Number(binding) : null;
+    }
+
+    function buildWorkspaceAccessResult(containerId, info) {
+        const idePort = getHostPort(info, IDE_CONTAINER_PORT);
+        const frontendPort = getHostPort(info, MERN_FRONTEND_CONTAINER_PORT);
+        const backendPort = getHostPort(info, MERN_BACKEND_CONTAINER_PORT);
+
+        const result = {
+            containerId,
+            idePort,
+            ideUrl: `http://localhost:${idePort}`,
+        };
+
+        if (frontendPort) {
+            result.frontendPort = frontendPort;
+            result.frontendUrl = `http://localhost:${frontendPort}`;
+        }
+
+        if (backendPort) {
+            result.backendPort = backendPort;
+            result.backendUrl = `http://localhost:${backendPort}`;
+        }
+
+        return result;
+    }
+
+    async function writeWorkspacePortsFile(workspaceId, portInfo) {
+        const lines = [`IDE_PORT=${portInfo.idePort}`];
+
+        if (portInfo.frontendPort) {
+            lines.push(`FRONTEND_PORT=${portInfo.frontendPort}`);
+        }
+
+        if (portInfo.backendPort) {
+            lines.push(`BACKEND_PORT=${portInfo.backendPort}`);
+        }
+
+        const command = [
+            'sh',
+            '-lc',
+            `cat <<'EOF' > /workspace/.devpod-ports
+${lines.join('\n')}
+EOF`
+        ];
+
+        await execInContainer(workspaceId, command);
+    }
+
+    // Python/Node only need the IDE port. MERN also needs app ports published to the host.
     const TEMPLATE_CONFIG = {
         'python': {
-            ExposedPorts: { '8080/tcp': {} },
+            ExposedPorts: { [IDE_CONTAINER_PORT]: {} },
             hostConfig: {
-                PortBindings: { '8080/tcp': [{ HostPort: '0' }] },
+                PortBindings: { [IDE_CONTAINER_PORT]: [{ HostPort: '0' }] },
                 Memory: 512 * 1024 * 1024,
                 NanoCpus: 1 * 1e9,
             },
@@ -26,20 +80,28 @@
             cmd: ['code-server', '--bind-addr', '0.0.0.0:8080', '--auth', 'none', '--disable-telemetry', '/workspace']
         },
         'nodejs': {
-            ExposedPorts: { '8080/tcp': {} },
+            ExposedPorts: { [IDE_CONTAINER_PORT]: {} },
             hostConfig: {
-                PortBindings: { '8080/tcp': [{ HostPort: '0' }] },
+                PortBindings: { [IDE_CONTAINER_PORT]: [{ HostPort: '0' }] },
                 Memory: 512 * 1024 * 1024,
                 NanoCpus: 1 * 1e9,
             },
             env: ['SHELL=/bin/bash', 'DEBIAN_FRONTEND=noninteractive'],
             cmd: ['code-server', '--bind-addr', '0.0.0.0:8080', '--auth', 'none', '--disable-telemetry', '/workspace']
         },
-        // MERN only exposes code-server — frontend/backend accessed via /absproxy/PORT/
+        // MERN publishes the IDE plus the nested frontend/backend dev servers.
         'mern': {
-            ExposedPorts: { '8080/tcp': {} },
+            ExposedPorts: {
+                [IDE_CONTAINER_PORT]: {},
+                [MERN_FRONTEND_CONTAINER_PORT]: {},
+                [MERN_BACKEND_CONTAINER_PORT]: {},
+            },
             hostConfig: {
-                PortBindings: { '8080/tcp': [{ HostPort: '0' }] },
+                PortBindings: {
+                    [IDE_CONTAINER_PORT]: [{ HostPort: '0' }],
+                    [MERN_FRONTEND_CONTAINER_PORT]: [{ HostPort: '0' }],
+                    [MERN_BACKEND_CONTAINER_PORT]: [{ HostPort: '0' }],
+                },
                 Memory: 1024 * 1024 * 1024,
                 NanoCpus: 2 * 1e9,
             },
@@ -47,9 +109,9 @@
             cmd: ['code-server', '--bind-addr', '0.0.0.0:8080', '--auth', 'none', '--disable-telemetry', '/workspace']
         },
         'java': {
-            ExposedPorts: { '8080/tcp': {} },
+            ExposedPorts: { [IDE_CONTAINER_PORT]: {} },
             hostConfig: {
-                PortBindings: { '8080/tcp': [{ HostPort: '0' }] },
+                PortBindings: { [IDE_CONTAINER_PORT]: [{ HostPort: '0' }] },
                 Memory: 1024 * 1024 * 1024,
                 NanoCpus: 2 * 1e9,
             },
@@ -295,15 +357,19 @@
             const info = await container.inspect();
             console.log('📊 Port mappings:', JSON.stringify(info.NetworkSettings.Ports, null, 2));
 
-            const idePort = info.NetworkSettings.Ports['8080/tcp'][0].HostPort;
+            const result = buildWorkspaceAccessResult(container.id, info);
 
-            console.log(`✅ Workspace launched - IDE: http://localhost:${idePort}`);
+            console.log(`✅ Workspace launched - IDE: ${result.ideUrl}`);
+            if (result.frontendUrl) {
+                console.log(`✅ MERN frontend published at: ${result.frontendUrl}`);
+            }
+            if (result.backendUrl) {
+                console.log(`✅ MERN backend published at: ${result.backendUrl}`);
+            }
 
-            const result = {
-                containerId: container.id,
-                idePort: idePort,
-                ideUrl: `http://localhost:${idePort}`,
-            };
+            if (result.frontendPort || result.backendPort) {
+                await writeWorkspacePortsFile(workspaceId, result);
+            }
 
             return result;
 
@@ -349,12 +415,11 @@
             await new Promise(resolve => setTimeout(resolve, 2000));
             
             const info = await container.inspect();
-            const idePort = info.NetworkSettings.Ports['8080/tcp'][0].HostPort;
+            const result = buildWorkspaceAccessResult(null, info);
 
-            const result = {
-                idePort: idePort,
-                ideUrl: `http://localhost:${idePort}`,
-            };
+            if (result.frontendPort || result.backendPort) {
+                await writeWorkspacePortsFile(workspaceId, result);
+            }
 
             return result;
         } catch (error) {

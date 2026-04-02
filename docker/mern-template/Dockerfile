@@ -16,8 +16,8 @@ RUN apt-get update && \
     dos2unix \
     && rm -rf /var/lib/apt/lists/*
 
-# Install code-server (pinned to 4.96.4 — proxy routes confirmed working)
-RUN curl -fsSL https://code-server.dev/install.sh | sh -s -- --version 4.96.4 && \
+# Install code-server
+RUN curl -fsSL https://code-server.dev/install.sh | sh && \
     code-server --version
 
 # Install global packages for MERN development

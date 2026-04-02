@@ -1,16 +1,23 @@
 #!/bin/bash
 # DevPod MERN dev launcher
 
-echo ""
-echo "============================================"
-echo "  DevPod MERN Stack"
-echo "============================================"
-echo ""
-echo "  Starting frontend + backend servers..."
-echo "  Click 'Open in Browser' when code-server"
-echo "  detects the ports, or check the PORTS tab."
-echo ""
-echo "============================================"
+if [ -f /workspace/.devpod-ports ]; then
+  . /workspace/.devpod-ports
+  echo ""
+  echo "============================================"
+  echo "  DevPod MERN Stack"
+  echo "============================================"
+  if [ -n "$FRONTEND_PORT" ]; then
+    echo "  Frontend:  http://localhost:$FRONTEND_PORT"
+  fi
+  if [ -n "$BACKEND_PORT" ]; then
+    echo "  Backend:   http://localhost:$BACKEND_PORT"
+  fi
+  echo "============================================"
+  echo ""
+fi
+
+echo "  Starting servers... (Ctrl+C to stop)"
 echo ""
 
 cd /workspace
