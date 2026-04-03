@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './ShareWorkspaceModal.css';
 
-const SHAREABLE_TEMPLATES = new Set(['python', 'nodejs', 'java']);
+const SHAREABLE_TEMPLATES = new Set(['python', 'nodejs', 'java', 'mern', 'cpp', 'go', 'nextjs']);
 
 export default function ShareWorkspaceModal({ workspace, onClose, onShareCreated }) {
   const [loading, setLoading] = useState(false);

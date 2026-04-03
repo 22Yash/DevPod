@@ -10,6 +10,9 @@
         'nodejs': 'devpod-nodejs:latest',
         'mern': 'devpod-mern:latest',
         'java': 'devpod-java:latest',
+        'cpp': 'devpod-cpp:latest',
+        'go': 'devpod-go:latest',
+        'nextjs': 'devpod-nextjs:latest',
     };
 
     const MERN_FRONTEND_CONTAINER_PORT = '3000/tcp';
@@ -128,6 +131,36 @@ EOF`
                 NanoCpus: 1 * 1e9,
             },
             env: ['SHELL=/bin/bash', 'DEBIAN_FRONTEND=noninteractive']
+        },
+        'cpp': {
+            ExposedPorts: { [IDE_CONTAINER_PORT]: {} },
+            hostConfig: {
+                PortBindings: { [IDE_CONTAINER_PORT]: [{ HostPort: '0' }] },
+                Memory: 512 * 1024 * 1024,
+                NanoCpus: 1 * 1e9,
+            },
+            env: ['SHELL=/bin/bash', 'DEBIAN_FRONTEND=noninteractive'],
+            cmd: ['code-server', '--bind-addr', '0.0.0.0:8080', '--auth', 'none', '--disable-telemetry', '/workspace']
+        },
+        'go': {
+            ExposedPorts: { [IDE_CONTAINER_PORT]: {} },
+            hostConfig: {
+                PortBindings: { [IDE_CONTAINER_PORT]: [{ HostPort: '0' }] },
+                Memory: 512 * 1024 * 1024,
+                NanoCpus: 1 * 1e9,
+            },
+            env: ['SHELL=/bin/bash', 'DEBIAN_FRONTEND=noninteractive'],
+            cmd: ['code-server', '--bind-addr', '0.0.0.0:8080', '--auth', 'none', '--disable-telemetry', '/workspace']
+        },
+        'nextjs': {
+            ExposedPorts: { [IDE_CONTAINER_PORT]: {} },
+            hostConfig: {
+                PortBindings: { [IDE_CONTAINER_PORT]: [{ HostPort: '0' }] },
+                Memory: 512 * 1024 * 1024,
+                NanoCpus: 1 * 1e9,
+            },
+            env: ['SHELL=/bin/bash', 'DEBIAN_FRONTEND=noninteractive'],
+            cmd: ['code-server', '--bind-addr', '0.0.0.0:8080', '--auth', 'none', '--disable-telemetry', '/workspace']
         },
     };
 
@@ -271,6 +304,9 @@ EOF`
                 else if (imageName.includes('nodejs')) dockerfilePath = path.join(repoRoot, 'docker', 'nodejs');
                 else if (imageName.includes('mern')) dockerfilePath = path.join(repoRoot, 'docker', 'mern-template');
                 else if (imageName.includes('java')) dockerfilePath = path.join(repoRoot, 'docker', 'java');
+                else if (imageName.includes('cpp')) dockerfilePath = path.join(repoRoot, 'docker', 'cpp');
+                else if (imageName.includes('go')) dockerfilePath = path.join(repoRoot, 'docker', 'go');
+                else if (imageName.includes('nextjs')) dockerfilePath = path.join(repoRoot, 'docker', 'nextjs');
                 else throw new Error(`Unknown template for image: ${imageName}`);
                 
                 console.log(`🔨 Building from: ${dockerfilePath}`);
