@@ -344,8 +344,11 @@ EOF`
                 PortBindings: config.hostConfig.PortBindings,
             });
 
-            // Build env vars, injecting Git credentials if provided
+            // Build env vars
             const envVars = [...(config.env || [])];
+            if (WORKSPACE_DOMAIN) {
+                envVars.push(`WORKSPACE_DOMAIN=${WORKSPACE_DOMAIN}`);
+            }
             if (options.githubToken) {
                 envVars.push(`GITHUB_TOKEN=${options.githubToken}`);
             }

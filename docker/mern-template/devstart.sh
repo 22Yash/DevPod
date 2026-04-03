@@ -8,10 +8,18 @@ if [ -f /workspace/.devpod-ports ]; then
   echo "  DevPod MERN Stack"
   echo "============================================"
   if [ -n "$FRONTEND_PORT" ]; then
-    echo "  Frontend:  http://localhost:$FRONTEND_PORT"
+    if [ -n "$WORKSPACE_DOMAIN" ]; then
+      echo "  Frontend:  https://ws-$FRONTEND_PORT.$WORKSPACE_DOMAIN"
+    else
+      echo "  Frontend:  http://localhost:$FRONTEND_PORT"
+    fi
   fi
   if [ -n "$BACKEND_PORT" ]; then
-    echo "  Backend:   http://localhost:$BACKEND_PORT"
+    if [ -n "$WORKSPACE_DOMAIN" ]; then
+      echo "  Backend:   https://ws-$BACKEND_PORT.$WORKSPACE_DOMAIN"
+    else
+      echo "  Backend:   http://localhost:$BACKEND_PORT"
+    fi
   fi
   echo "============================================"
   echo ""
