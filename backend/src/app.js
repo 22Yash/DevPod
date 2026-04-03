@@ -9,6 +9,9 @@ const shareRoutes = require('./routes/share');
 
 const app = express();
 
+// Trust nginx proxy so secure cookies work behind HTTPS
+app.set('trust proxy', 1);
+
 // Connect to MongoDB
 connectDB();
 
