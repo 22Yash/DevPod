@@ -21,10 +21,17 @@
         return binding ? Number(binding) : null;
     }
 
-    // In production, set WORKSPACE_HOST to the server's public domain/IP.
-    // Locally it defaults to localhost.
-    const WORKSPACE_HOST = process.env.WORKSPACE_HOST || 'localhost';
-    const WORKSPACE_PROTOCOL = process.env.WORKSPACE_PROTOCOL || 'http';
+    // In production, set WORKSPACE_DOMAIN to enable subdomain-based workspace URLs
+    // (e.g. WORKSPACE_DOMAIN=mydevpod.me → https://ws-32768.mydevpod.me).
+    // When unset, falls back to localhost:PORT for local development.
+    const WORKSPACE_DOMAIN = process.env.WORKSPACE_DOMAIN || '';
+
+    function buildWorkspaceUrl(port) {
+        if (WORKSPACE_DOMAIN) {
+            return `https://ws-${port}.${WORKSPACE_DOMAIN}`;
+        }
+        return `http://localhost:${port}`;
+    }
 
     function buildWorkspaceAccessResult(containerId, info) {
         const idePort = getHostPort(info, IDE_CONTAINER_PORT);
@@ -34,17 +41,17 @@
         const result = {
             containerId,
             idePort,
-            ideUrl: `${WORKSPACE_PROTOCOL}://${WORKSPACE_HOST}:${idePort}`,
+            ideUrl: buildWorkspaceUrl(idePort),
         };
 
         if (frontendPort) {
             result.frontendPort = frontendPort;
-            result.frontendUrl = `${WORKSPACE_PROTOCOL}://${WORKSPACE_HOST}:${frontendPort}`;
+            result.frontendUrl = buildWorkspaceUrl(frontendPort);
         }
 
         if (backendPort) {
             result.backendPort = backendPort;
-            result.backendUrl = `${WORKSPACE_PROTOCOL}://${WORKSPACE_HOST}:${backendPort}`;
+            result.backendUrl = buildWorkspaceUrl(backendPort);
         }
 
         return result;

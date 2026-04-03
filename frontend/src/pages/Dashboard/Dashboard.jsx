@@ -492,7 +492,13 @@ const Dashboard = () => {
                             {workspace.status === 'running' ? (
                               <>
                                 <motion.button
-                                  onClick={() => window.open(`${import.meta.env.VITE_WORKSPACE_BASE_URL || 'http://localhost'}:${workspace.idePort}`, '_blank')}
+                                  onClick={() => {
+                                    const domain = import.meta.env.VITE_WORKSPACE_DOMAIN;
+                                    const url = domain
+                                      ? `https://ws-${workspace.idePort}.${domain}`
+                                      : `http://localhost:${workspace.idePort}`;
+                                    window.open(url, '_blank');
+                                  }}
                                   className="bg-emerald-500 hover:bg-emerald-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all"
                                   whileHover={{ scale: 1.05 }}
                                   whileTap={{ scale: 0.95 }}
