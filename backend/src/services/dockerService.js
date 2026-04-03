@@ -257,11 +257,13 @@ EOF`
             if (!imageExists) {
                 console.log(`🔨 Building custom image: ${imageName}`);
                 
+                const path = require('path');
+                const repoRoot = path.resolve(__dirname, '..', '..', '..');
                 let dockerfilePath;
-                if (imageName.includes('python')) dockerfilePath = './docker/python';
-                else if (imageName.includes('nodejs')) dockerfilePath = './docker/nodejs';
-                else if (imageName.includes('mern')) dockerfilePath = './docker/mern-template';
-                else if (imageName.includes('java')) dockerfilePath = './docker/java';
+                if (imageName.includes('python')) dockerfilePath = path.join(repoRoot, 'docker', 'python');
+                else if (imageName.includes('nodejs')) dockerfilePath = path.join(repoRoot, 'docker', 'nodejs');
+                else if (imageName.includes('mern')) dockerfilePath = path.join(repoRoot, 'docker', 'mern-template');
+                else if (imageName.includes('java')) dockerfilePath = path.join(repoRoot, 'docker', 'java');
                 else throw new Error(`Unknown template for image: ${imageName}`);
                 
                 console.log(`🔨 Building from: ${dockerfilePath}`);
