@@ -89,7 +89,7 @@ EOF`
                 NanoCpus: 1 * 1e9,
             },
             env: ['SHELL=/bin/bash', 'DEBIAN_FRONTEND=noninteractive'],
-            cmd: ['code-server', '--bind-addr', '0.0.0.0:8080', '--auth', 'none', '--disable-telemetry', '/workspace']
+            cmd: ['code-server', '--bind-addr', '0.0.0.0:8080', '--auth', 'none', '--disable-telemetry', '--app-name', 'DevPod', '/workspace']
         },
         'nodejs': {
             ExposedPorts: { [IDE_CONTAINER_PORT]: {} },
@@ -99,7 +99,7 @@ EOF`
                 NanoCpus: 1 * 1e9,
             },
             env: ['SHELL=/bin/bash', 'DEBIAN_FRONTEND=noninteractive'],
-            cmd: ['code-server', '--bind-addr', '0.0.0.0:8080', '--auth', 'none', '--disable-telemetry', '/workspace']
+            cmd: ['code-server', '--bind-addr', '0.0.0.0:8080', '--auth', 'none', '--disable-telemetry', '--app-name', 'DevPod', '/workspace']
         },
         // MERN publishes the IDE plus the nested frontend/backend dev servers.
         'mern': {
@@ -118,7 +118,7 @@ EOF`
                 NanoCpus: 1 * 1e9,
             },
             env: ['SHELL=/bin/bash', 'DEBIAN_FRONTEND=noninteractive'],
-            cmd: ['code-server', '--bind-addr', '0.0.0.0:8080', '--auth', 'none', '--disable-telemetry', '/workspace']
+            cmd: ['code-server', '--bind-addr', '0.0.0.0:8080', '--auth', 'none', '--disable-telemetry', '--app-name', 'DevPod', '/workspace']
         },
         'java': {
             ExposedPorts: { [IDE_CONTAINER_PORT]: {} },
