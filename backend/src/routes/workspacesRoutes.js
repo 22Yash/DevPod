@@ -23,7 +23,7 @@ router.get('/:workspaceId/details', isAuthenticated, workspaceController.getWork
 // 1. POST /api/v1/workspaces/launch
 // --------------------------------------------------------------------------
 router.post('/launch', isAuthenticated, async (req, res) => {
-  const { template, name, description, repositoryUrl } = req.body;
+  const { template, name, description } = req.body;
   const userId = req.session.userId;
   let containerLaunched = false;
   let workspaceSaved = false;
@@ -64,9 +64,7 @@ router.post('/launch', isAuthenticated, async (req, res) => {
       containerId: result.containerId,
       idePort: result.idePort,
       frontendPort: result.frontendPort,
-      backendPort: result.backendPort,
-      repositoryUrl: repositoryUrl || '',
-      repositoryName: repositoryUrl ? repositoryUrl.split('/').pop().replace('.git', '') : ''
+      backendPort: result.backendPort
     });
     workspaceSaved = true;
 

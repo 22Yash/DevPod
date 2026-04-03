@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Monitor, Rocket, Code, Settings, Plus, Search,
-  Users, Clock, FolderOpen, GitBranch, Share2, Play, Activity, LogOut,
+  Monitor, Rocket, Code, Plus, Search,
+  Users, FolderOpen, Share2, Play, Activity, LogOut,
   Square, Trash2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -476,10 +476,6 @@ const Dashboard = () => {
                           <div className="flex items-center space-x-1">
                             <Code className="w-4 h-4" />
                             <span>{workspace.template}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <GitBranch className="w-4 h-4" />
-                            <span>{workspace.branches || 1}</span>
                           </div>
                           <div className="flex items-center space-x-1">
                             <Users className="w-4 h-4" />

@@ -38,14 +38,6 @@ const workspaceSchema = new mongoose.Schema({
   frontendPort: Number,
   backendPort: Number,
   
-  // Repository info (if applicable)
-  repositoryUrl: String,
-  repositoryName: String,
-  branches: {
-    type: Number,
-    default: 1
-  },
-  
   // Sharing
   isShared: {
     type: Boolean,

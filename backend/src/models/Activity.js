@@ -16,13 +16,11 @@ const activitySchema = new mongoose.Schema({
     type: String,
     required: true,
     enum: [
-      'workspace_created',
       'workspace_launched',
       'workspace_stopped',
       'workspace_resumed',
       'workspace_deleted',
       'command_executed',
-      'collaborator_added',
       'user_login',
       'workspace_shared',
       'workspace_cloned',

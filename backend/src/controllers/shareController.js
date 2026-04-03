@@ -277,6 +277,12 @@ const shareController = {
       // Increment clone count
       await shareSnapshot.incrementCloneCount();
 
+      // Add cloner as collaborator on the original workspace
+      await Workspace.updateOne(
+        { workspaceId: shareSnapshot.workspaceId },
+        { $addToSet: { collaborators: req.session.userId } }
+      );
+
       // Log activity
       await Activity.create({
         userId: req.session.userId,

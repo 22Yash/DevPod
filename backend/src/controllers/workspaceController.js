@@ -33,19 +33,10 @@ const workspaceController = {
         );
       });
       
-      // Calculate total hours saved (sum from all workspaces)
-      const hoursSaved = workspaces.reduce((total, ws) => {
-        const daysSinceCreation = Math.floor(
-          (Date.now() - ws.createdAt) / (1000 * 60 * 60 * 24)
-        );
-        return total + Math.floor(daysSinceCreation * 0.5);
-      }, 0);
-      
       res.json({
         activeWorkspaces,
         totalProjects,
         collaborators: collaboratorsSet.size,
-        hoursSaved
       });
     } catch (error) {
       console.error('Error getting dashboard stats:', error);
