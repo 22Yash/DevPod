@@ -114,7 +114,7 @@ EOF`
                     [MERN_FRONTEND_CONTAINER_PORT]: [{ HostPort: '0' }],
                     [MERN_BACKEND_CONTAINER_PORT]: [{ HostPort: '0' }],
                 },
-                Memory: 512 * 1024 * 1024,
+                Memory: 1024 * 1024 * 1024,
                 NanoCpus: 1 * 1e9,
             },
             env: ['SHELL=/bin/bash', 'DEBIAN_FRONTEND=noninteractive'],
