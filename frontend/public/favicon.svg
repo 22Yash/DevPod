@@ -1,0 +1,48 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B0F19" />
+      <stop offset="100%" stop-color="#1A2235" />
+    </linearGradient>
+
+    <!-- Pod Gradient -->
+    <linearGradient id="podGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00F0FF" />
+      <stop offset="100%" stop-color="#5438FF" />
+    </linearGradient>
+
+    <!-- Favicon needs very high contrast glass so we make it more opaque -->
+    <linearGradient id="glass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255, 255, 255, 0.2)" />
+      <stop offset="100%" stop-color="rgba(255, 255, 255, 0.02)" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background container -->
+  <rect width="512" height="512" rx="112" ry="112" fill="url(#bg)" />
+
+  <g transform="translate(256, 256)">
+    <!-- Main Outline of the Pod (Capsule) -->
+    <!-- Maximize space: 320x360 with rx=160 takes up ~65% of the tab icon space -->
+    <rect x="-160" y="-180" width="320" height="360" rx="160" fill="url(#glass)" stroke="url(#podGrad)" stroke-width="32" />
+
+    <!-- Code Brackets inside the Pod -->
+    <!-- Thickened strokes to guarantee 1px/2px exact visibility when scaled to a 16x16 or 32x32 tab -->
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <!-- Left Bracket (Cyan) -->
+      <path d="M -30 -60 L -100 0 L -30 60" stroke="#00F0FF" stroke-width="32" />
+      <!-- Inner White core for extra brightness -->
+      <path d="M -30 -60 L -100 0 L -30 60" stroke="#FFFFFF" stroke-width="12" />
+
+      <!-- Slash -->
+      <path d="M 15 80 L -15 -80" stroke="#FFFFFF" stroke-width="24" opacity="0.8" />
+      <path d="M 15 80 L -15 -80" stroke="#FFFFFF" stroke-width="8" />
+
+      <!-- Right Bracket (Purple/Blue) -->
+      <path d="M 30 -60 L 100 0 L 30 60" stroke="#5438FF" stroke-width="32" />
+      <!-- Inner White core -->
+      <path d="M 30 -60 L 100 0 L 30 60" stroke="#FFFFFF" stroke-width="12" />
+    </g>
+  </g>
+</svg>
