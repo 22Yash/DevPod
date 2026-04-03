@@ -1,6 +1,6 @@
     # docker/mern-template/Dockerfile
 
-FROM node:20-bullseye-slim 
+FROM node:20-bookworm-slim 
 
 USER root
 
