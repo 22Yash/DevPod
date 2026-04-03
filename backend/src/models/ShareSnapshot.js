@@ -19,7 +19,7 @@ const shareSnapshotSchema = new mongoose.Schema({
   template: {
     type: String,
     required: true,
-    enum: ['python', 'nodejs', 'mern', 'java', 'cpp', 'go', 'nextjs']
+    enum: ['python', 'nodejs', 'mern', 'java']
   },
   name: {
     type: String,

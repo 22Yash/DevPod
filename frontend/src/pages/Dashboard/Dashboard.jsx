@@ -9,7 +9,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import ShareWorkspaceModal from '../../components/ShareWorkspaceModal';
 
-const SHAREABLE_TEMPLATES = new Set(['python', 'nodejs', 'java', 'mern', 'cpp', 'go', 'nextjs']);
+const SHAREABLE_TEMPLATES = new Set(['python', 'nodejs', 'java']);
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -116,9 +116,6 @@ const Dashboard = () => {
     else if (template.name.includes('Node.js')) templateKey = 'nodejs';
     else if (template.name.includes('MERN')) templateKey = 'mern';
     else if (template.name.includes('Java')) templateKey = 'java';
-    else if (template.name.includes('C/C++')) templateKey = 'cpp';
-    else if (template.name.includes('Next.js')) templateKey = 'nextjs';
-    else if (template.name.includes('Go')) templateKey = 'go';
     else {
       alert(`Template ${template.name} is not configured.`);
       setLaunchingTemplateId(null);
@@ -243,10 +240,7 @@ const Dashboard = () => {
     { id: 3, name: 'Python Development', description: 'Python environment with code-server IDE', icon: '🐍', tags: ['Backend', 'Python', 'API'], uses: 120 },
     { id: 4, name: 'Node.js Backend', description: 'Node.js and Express development environment', icon: '⚙️', tags: ['Backend', 'Node.js', 'Express'], uses: 80 },
     { id: 5, name: 'MERN Stack', description: 'MongoDB, Express, React, Node.js full-stack environment', icon: '🍃', tags: ['Full-Stack', 'MongoDB', 'React'], featured: true, uses: 200 },
-    { id: 6, name: 'Java Development', description: 'Java 17 with Maven, Gradle, and code-server IDE', icon: '☕', tags: ['Backend', 'Java', 'Maven', 'Gradle'], uses: 95 },
-    { id: 7, name: 'C/C++ Development', description: 'GCC, G++, Make, CMake, and GDB debugger', icon: '⚡', tags: ['Systems', 'C', 'C++'], uses: 60 },
-    { id: 8, name: 'Next.js', description: 'Next.js with TypeScript, Tailwind CSS, and App Router', icon: '▲', tags: ['Full-Stack', 'React', 'Next.js'], uses: 150 },
-    { id: 9, name: 'Go Development', description: 'Go 1.22 with full toolchain and module support', icon: '🔷', tags: ['Backend', 'Go', 'Systems'], uses: 70 }
+    { id: 6, name: 'Java Development', description: 'Java 17 with Maven, Gradle, and code-server IDE', icon: '☕', tags: ['Backend', 'Java', 'Maven', 'Gradle'], uses: 95 }
   ];
 
   const fadeInUp = {

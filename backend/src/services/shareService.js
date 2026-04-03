@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const dockerService = require('./dockerService');
 
-const SHAREABLE_TEMPLATES = new Set(['python', 'nodejs', 'java', 'mern', 'cpp', 'go', 'nextjs']);
+const SHAREABLE_TEMPLATES = new Set(['python', 'nodejs', 'java']);
 const SNAPSHOT_EXCLUDE_PATTERNS = [
   '*/.git/*',
   '*/node_modules/*',
@@ -133,37 +133,14 @@ function parseJavaPackages(snapshot) {
   return [];
 }
 
-function parseGoPackages(snapshot) {
-  const goMod = readSnapshotTextFile(snapshot, '/go.mod');
-  if (!goMod) {
-    return [];
-  }
-
-  const packages = [];
-  const requireRegex = /^\s+(\S+)\s+(\S+)/gm;
-  const inRequire = goMod.match(/require\s*\(([\s\S]*?)\)/);
-  if (inRequire) {
-    let match;
-    while ((match = requireRegex.exec(inRequire[1])) !== null) {
-      packages.push(`${match[1]}@${match[2]}`);
-    }
-  }
-
-  return packages;
-}
-
 function extractPackages(snapshot, template) {
   switch (normalizeTemplate(template)) {
     case 'python':
       return parsePythonPackages(snapshot);
     case 'nodejs':
-    case 'nextjs':
-    case 'mern':
       return parseNodePackages(snapshot);
     case 'java':
       return parseJavaPackages(snapshot);
-    case 'go':
-      return parseGoPackages(snapshot);
     default:
       return [];
   }
@@ -253,49 +230,18 @@ function buildJavaRestoreCommand(snapshot) {
   return null;
 }
 
-function buildMernRestoreCommand(snapshot) {
-  // MERN has up to 3 package.json files: root, frontend, backend
-  const commands = [];
-
-  if (getSnapshotFile(snapshot, '/package.json')) {
-    commands.push('cd /workspace && npm install');
-  }
-  if (getSnapshotFile(snapshot, '/frontend/package.json')) {
-    commands.push('cd /workspace/frontend && npm install');
-  }
-  if (getSnapshotFile(snapshot, '/backend/package.json')) {
-    commands.push('cd /workspace/backend && npm install');
-  }
-
-  if (commands.length === 0) {
-    return null;
-  }
-
-  return ['sh', '-lc', commands.join(' && ')];
-}
-
 function buildDependencyRestoreCommand(snapshot, template) {
   switch (normalizeTemplate(template)) {
     case 'python':
       if (!getSnapshotFile(snapshot, '/requirements.txt')) {
         return null;
       }
+
       return ['sh', '-lc', 'cd /workspace && pip install -r requirements.txt'];
     case 'nodejs':
-    case 'nextjs':
       return buildNodeRestoreCommand(snapshot);
-    case 'mern':
-      return buildMernRestoreCommand(snapshot);
     case 'java':
       return buildJavaRestoreCommand(snapshot);
-    case 'go':
-      if (!getSnapshotFile(snapshot, '/go.mod')) {
-        return null;
-      }
-      return ['sh', '-lc', 'cd /workspace && go mod download'];
-    case 'cpp':
-      // C/C++ projects compile from source, no package manager
-      return null;
     default:
       return null;
   }
