@@ -675,7 +675,7 @@ const handleGitHubLogin = () => {
                 whileHover={{ y: -10 }}
                 className="relative"
               >
-                <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700 hover:border-emerald-500/50 transition-all duration-300">
+                <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700 hover:border-emerald-500/50 transition-all duration-300 h-full">
                   <div className="absolute -top-4 -left-4 w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center text-white font-bold">
                     {item.step}
                   </div>

@@ -2,59 +2,77 @@ import { useState, useEffect } from 'react'
 import './App.css'
 
 function App() {
-  const [message, setMessage] = useState('Loading...')
+  const [message, setMessage] = useState('Connecting...')
   const [apiData, setApiData] = useState(null)
 
   useEffect(() => {
-    // Test backend connection
     fetch('/api/test')
       .then(res => res.json())
       .then(data => {
         setApiData(data)
-        setMessage('Connected to backend!')
+        setMessage('Connected')
       })
       .catch(err => {
         console.error('Backend connection failed:', err)
-        setMessage('Backend connection failed - check if backend is running')
+        setMessage('Not connected — start the backend')
       })
   }, [])
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>🚀 MERN Template</h1>
-        <p>Welcome to your DevPod MERN workspace!</p>
-        
-        <div className="status-card">
-          <h3>Backend Status</h3>
-          <p className={apiData ? 'success' : 'error'}>{message}</p>
+    <div className="app">
+      <div className="container">
+        <div className="header">
+          <div className="logo">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <rect width="32" height="32" rx="8" fill="#10b981" fillOpacity="0.1"/>
+              <path d="M9 11L16 7L23 11V21L16 25L9 21Z" stroke="#10b981" strokeWidth="2" strokeLinejoin="round"/>
+            </svg>
+            <span>DevPod</span>
+          </div>
+          <h1>MERN Stack Workspace</h1>
+          <p className="subtitle">MongoDB + Express + React + Node.js</p>
+        </div>
+
+        <div className="card">
+          <div className="card-header">
+            <span className="card-title">Backend Status</span>
+            <span className={`status-badge ${apiData ? 'connected' : 'disconnected'}`}>
+              {message}
+            </span>
+          </div>
           {apiData && (
-            <pre>{JSON.stringify(apiData, null, 2)}</pre>
+            <pre className="code-block">{JSON.stringify(apiData, null, 2)}</pre>
           )}
         </div>
 
-        <div className="instructions">
-          <h3>🔧 Getting Started</h3>
-          <ol>
-            <li>Frontend is running on port 3000</li>
-            <li>Start backend: <code>cd backend && npm run dev</code></li>
-            <li>Backend will run on port 5000</li>
-            <li>Check the PORTS tab for forwarded URLs</li>
-          </ol>
+        <div className="card">
+          <span className="card-title">Quick Start</span>
+          <div className="steps">
+            <div className="step">
+              <span className="step-num">1</span>
+              <span>Frontend is running on port 3000</span>
+            </div>
+            <div className="step">
+              <span className="step-num">2</span>
+              <span>Start backend: <code>cd backend && npm run dev</code></span>
+            </div>
+            <div className="step">
+              <span className="step-num">3</span>
+              <span>Backend will run on port 5000</span>
+            </div>
+            <div className="step">
+              <span className="step-num">4</span>
+              <span>API calls are proxied — fetch("/api/...") just works</span>
+            </div>
+          </div>
         </div>
 
         <div className="links">
-          <a href="/health" target="_blank" rel="noopener noreferrer">
-            Backend Health Check
-          </a>
-          <a href="https://reactjs.org" target="_blank" rel="noopener noreferrer">
-            Learn React
-          </a>
-          <a href="https://expressjs.com" target="_blank" rel="noopener noreferrer">
-            Learn Express
-          </a>
+          <a href="/health" target="_blank" rel="noopener noreferrer">Health Check</a>
+          <a href="https://react.dev" target="_blank" rel="noopener noreferrer">React Docs</a>
+          <a href="https://expressjs.com" target="_blank" rel="noopener noreferrer">Express Docs</a>
         </div>
-      </header>
+      </div>
     </div>
   )
 }

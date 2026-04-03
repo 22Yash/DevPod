@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Code } from 'lucide-react';
 import './SharePreview.css';
 
 export default function SharePreview() {
@@ -125,10 +126,10 @@ export default function SharePreview() {
 
   if (loading) {
     return (
-      <div className="share-preview-container">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <p>Loading workspace preview...</p>
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-5">
+        <div className="text-center">
+          <div className="spinner w-14 h-14 border-[5px] border-slate-700 border-t-emerald-500 rounded-full mx-auto mb-5" />
+          <p className="text-slate-400 text-base">Loading workspace preview...</p>
         </div>
       </div>
     );
@@ -136,12 +137,14 @@ export default function SharePreview() {
 
   if (error) {
     return (
-      <div className="share-preview-container">
-        <div className="error-container">
-          <div className="error-icon">⚠️</div>
-          <h2>Unable to Load Workspace</h2>
-          <p>{error}</p>
-          <button onClick={() => navigate('/')} className="btn-primary">
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-5">
+        <div className="text-center max-w-md">
+          <h2 className="text-white text-2xl font-semibold mb-3">Unable to Load Workspace</h2>
+          <p className="text-slate-400 text-lg mb-6">{error}</p>
+          <button
+            onClick={() => navigate('/')}
+            className="px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-white font-semibold rounded-lg transition-colors cursor-pointer"
+          >
             Go to Home
           </button>
         </div>
@@ -149,72 +152,55 @@ export default function SharePreview() {
     );
   }
 
+  const statsText = [
+    `${shareData.fileCount} files`,
+    shareData.packages && shareData.packages.length > 0 ? `${shareData.packages.length} packages` : null,
+    `${shareData.cloneCount} clones`
+  ].filter(Boolean).join(' \u00B7 ');
+
   return (
-    <div className="share-preview-container">
-      <div className="share-preview-card">
-        <div className="preview-header">
-          <div className="owner-info">
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-5">
+      <div className="share-preview-card bg-slate-800 border border-slate-700 rounded-2xl max-w-[800px] w-full overflow-hidden">
+        <div className="bg-slate-800 px-8 py-7 flex justify-between items-center border-b border-slate-700">
+          <div className="flex items-center gap-4">
             <img
               src={shareData.owner.avatar}
               alt={shareData.owner.name}
-              className="owner-avatar"
+              className="w-14 h-14 rounded-full border border-slate-600"
             />
             <div>
-              <p className="owner-label">Shared by</p>
-              <p className="owner-name">{shareData.owner.name}</p>
+              <p className="text-slate-400 text-sm m-0">Shared by</p>
+              <p className="text-white text-xl font-semibold mt-1 m-0">{shareData.owner.name}</p>
             </div>
           </div>
-          <span className="template-badge">{shareData.template}</span>
+          <span className="px-4 py-2 bg-emerald-500/10 text-emerald-400 rounded-lg font-medium uppercase text-sm tracking-wide">
+            {shareData.template}
+          </span>
         </div>
 
-        <div className="preview-body">
-          <h1>{shareData.name}</h1>
+        <div className="p-10">
+          <h1 className="text-white text-3xl font-bold m-0 mb-3">{shareData.name}</h1>
           {shareData.description && (
-            <p className="description">{shareData.description}</p>
+            <p className="text-slate-400 text-lg leading-relaxed m-0 mb-6">{shareData.description}</p>
           )}
 
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-icon">📁</div>
-              <div className="stat-info">
-                <p className="stat-value">{shareData.fileCount}</p>
-                <p className="stat-label">Files</p>
-              </div>
-            </div>
+          <p className="text-slate-400 text-sm mb-8">{statsText}</p>
 
-            {shareData.packages && shareData.packages.length > 0 && (
-              <div className="stat-card">
-                <div className="stat-icon">📦</div>
-                <div className="stat-info">
-                  <p className="stat-value">{shareData.packages.length}</p>
-                  <p className="stat-label">Packages</p>
-                </div>
-              </div>
-            )}
-
-            <div className="stat-card">
-              <div className="stat-icon">👥</div>
-              <div className="stat-info">
-                <p className="stat-value">{shareData.cloneCount}</p>
-                <p className="stat-label">Clones</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="files-section">
-            <h3>Files Included</h3>
-            <div className="files-list">
+          <div className="mb-8">
+            <h3 className="text-white text-lg font-semibold m-0 mb-4">Files Included</h3>
+            <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 max-h-[300px] overflow-y-auto">
               {shareData.files.slice(0, 10).map((file, index) => (
-                <div key={index} className="file-item">
-                  <span className="file-icon">📄</span>
-                  <span className="file-path">{file.path}</span>
-                  <span className="file-size">
-                    {(file.size / 1024).toFixed(2)} KB
-                  </span>
+                <div
+                  key={index}
+                  className={`flex items-center gap-3 py-2.5 px-2 ${index < Math.min(shareData.files.length, 10) - 1 ? 'border-b border-slate-700' : ''}`}
+                >
+                  <Code className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                  <span className="flex-1 font-mono text-sm text-slate-300">{file.path}</span>
+                  <span className="text-xs text-slate-500 font-mono">{(file.size / 1024).toFixed(2)} KB</span>
                 </div>
               ))}
               {shareData.files.length > 10 && (
-                <p className="more-files">
+                <p className="text-center text-slate-500 text-sm mt-3 m-0">
                   + {shareData.files.length - 10} more files
                 </p>
               )}
@@ -222,11 +208,11 @@ export default function SharePreview() {
           </div>
 
           {shareData.packages && shareData.packages.length > 0 && (
-            <div className="packages-section">
-              <h3>Packages</h3>
-              <div className="packages-list">
+            <div className="mb-8">
+              <h3 className="text-white text-lg font-semibold m-0 mb-4">Packages</h3>
+              <div className="flex flex-wrap gap-2">
                 {shareData.packages.map((pkg, index) => (
-                  <span key={index} className="package-badge">
+                  <span key={index} className="px-3 py-1.5 bg-slate-700 text-slate-300 rounded-md text-sm font-mono">
                     {pkg}
                   </span>
                 ))}
@@ -234,42 +220,46 @@ export default function SharePreview() {
             </div>
           )}
 
-          <div className="clone-section">
-            <h3>Clone This Workspace</h3>
-            <p className="clone-description">
+          <div className="mb-8">
+            <h3 className="text-slate-300 text-lg font-semibold m-0 mb-2">Clone This Workspace</h3>
+            <p className="text-slate-400 text-sm m-0 mb-5 leading-relaxed">
               Create your own copy of this workspace with all files and packages included.
             </p>
 
             {isLoggedIn === false ? (
               <button
                 onClick={handleLoginToClone}
-                className="btn-clone"
+                className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-white font-semibold rounded-lg text-lg transition-colors cursor-pointer border-none"
               >
                 Login with GitHub to Clone
               </button>
             ) : (
               <>
-                <div className="form-group">
-                  <label>Workspace Name</label>
+                <div className="mb-5">
+                  <label className="block mb-2 font-medium text-slate-300 text-sm">Workspace Name</label>
                   <input
                     type="text"
                     value={customName}
                     onChange={(e) => setCustomName(e.target.value)}
                     placeholder="Enter workspace name"
-                    className="name-input"
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white text-base outline-none focus:border-emerald-500 transition-colors placeholder:text-slate-600"
                   />
                 </div>
 
-                {cloneError && <div className="error-message">{cloneError}</div>}
+                {cloneError && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm mb-4">
+                    {cloneError}
+                  </div>
+                )}
 
                 <button
                   onClick={handleClone}
                   disabled={cloning || !customName.trim() || isLoggedIn === null}
-                  className="btn-clone"
+                  className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-500 text-white font-semibold rounded-lg text-lg transition-colors cursor-pointer border-none flex items-center justify-center gap-2"
                 >
                   {cloning ? (
                     <>
-                      <span className="spinner-small"></span>
+                      <span className="spinner-small w-5 h-5 border-[3px] border-white/30 border-t-white rounded-full inline-block" />
                       Cloning Workspace...
                     </>
                   ) : (
@@ -281,15 +271,14 @@ export default function SharePreview() {
           </div>
 
           {shareData.expiresAt && (
-            <div className="expiry-notice">
-              ⏰ This share link expires on{' '}
-              {new Date(shareData.expiresAt).toLocaleString()}
+            <div className="p-3 bg-slate-800 border border-slate-700 rounded-lg text-slate-400 text-sm mt-4">
+              This share link expires on {new Date(shareData.expiresAt).toLocaleString()}
             </div>
           )}
 
           {shareData.maxClones && (
-            <div className="limit-notice">
-              📊 {shareData.cloneCount} / {shareData.maxClones} clones used
+            <div className="p-3 bg-slate-800 border border-slate-700 rounded-lg text-slate-400 text-sm mt-4">
+              {shareData.cloneCount} / {shareData.maxClones} clones used
             </div>
           )}
         </div>
