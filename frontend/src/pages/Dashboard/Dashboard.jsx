@@ -237,13 +237,13 @@ const Dashboard = () => {
   };
 
   const templates = [
-    { id: 3, name: 'Python Development', description: 'Python environment with code-server IDE', tags: ['Backend', 'Python', 'API'],
+    { id: 3, name: 'Python', description: 'Python environment with code-server IDE', tags: ['Backend', 'Python', 'API'],
       logo: <svg width="24" height="24" viewBox="0 0 256 255"><defs><linearGradient id="pa" x1="12.96%" y1="12.04%" x2="79.64%" y2="78.45%"><stop offset="0%" stopColor="#387EB8"/><stop offset="100%" stopColor="#366994"/></linearGradient><linearGradient id="pb" x1="19.13%" y1="20.58%" x2="90.58%" y2="88.01%"><stop offset="0%" stopColor="#FFE052"/><stop offset="100%" stopColor="#FFC331"/></linearGradient></defs><path d="M126.9 0C62.7 0 66.7 27.6 66.7 27.6l.1 28.6h61.3v8.6H39.2S0 60.7 0 126.2c0 65.5 34.2 63.2 34.2 63.2h20.4v-30.4s-1.1-34.2 33.6-34.2h57.8s32.6.5 32.6-31.5V33.5S183.2 0 126.9 0zM92.3 19.4c5.9 0 10.7 4.8 10.7 10.7 0 5.9-4.8 10.7-10.7 10.7-5.9 0-10.7-4.8-10.7-10.7 0-5.9 4.8-10.7 10.7-10.7z" fill="url(#pa)"/><path d="M128.8 254.1c63.2 0 60.2-27.6 60.2-27.6l-.1-28.6h-61.3v-8.6h88.9s39.2 4.1 39.2-61.4c0-65.5-34.2-63.2-34.2-63.2h-20.4v30.4s1.1 34.2-33.6 34.2h-57.8s-32.6-.5-32.6 31.5v59.8s-4.9 33.5 51.7 33.5zm34.3-19.4c-5.9 0-10.7-4.8-10.7-10.7 0-5.9 4.8-10.7 10.7-10.7 5.9 0 10.7 4.8 10.7 10.7 0 5.9-4.8 10.7-10.7 10.7z" fill="url(#pb)"/></svg> },
-    { id: 4, name: 'Node.js Backend', description: 'Node.js and Express development environment', tags: ['Backend', 'Node.js', 'Express'],
-      logo: <svg width="24" height="24" viewBox="0 0 256 289"><path d="M128 288.5c-3.5 0-6.9-.9-10-2.7L88.3 267c-4.7-2.6-2.4-3.6-.9-4.1 6.6-2.3 7.9-2.8 14.9-6.8.7-.4 1.7-.3 2.4.2l22.8 13.5c.8.5 2 .5 2.8 0l89-51.4c.9-.5 1.4-1.4 1.4-2.4V113.6c0-1-.5-2-1.4-2.4l-89-51.3c-.8-.5-2-.5-2.8 0L38.6 111.2c-.9.5-1.5 1.4-1.5 2.4v102.9c0 1 .6 1.9 1.4 2.4l24.4 14.1c13.2 6.6 21.3-1.2 21.3-8.9V122.3c0-1.4 1.1-2.5 2.5-2.5h10.9c1.4 0 2.5 1.1 2.5 2.5v101.8c0 17.5-9.5 27.5-26.1 27.5-5.1 0-9.1 0-20.3-5.5l-23.3-13.4C24.5 229.3 21 223.5 21 217.3V113.6c0-6.2 3.5-12 9.2-15.1l89-51.4c5.5-3.1 12.9-3.1 18.4 0l89 51.4c5.7 3.1 9.2 8.9 9.2 15.1v103.7c0 6.2-3.5 12-9.2 15.1l-89 51.4c-3 1.8-6.4 2.7-9.6 2.7z" fill="#539E43"/></svg> },
+    { id: 4, name: 'Node.js', description: 'Node.js and Express development environment', tags: ['Backend', 'Node.js', 'Express'],
+      logo: <svg width="24" height="24" viewBox="0 0 256 282"><path d="M116.5 1.6c7.1-4.1 15.9-4.1 23 0l96.3 55.6c7.1 4.1 11.5 11.8 11.5 20v111.2c0 8.2-4.4 15.8-11.5 20l-96.3 55.6c-7.1 4.1-15.9 4.1-23 0L20.2 208.4c-7.1-4.1-11.5-11.8-11.5-20V77.2c0-8.2 4.4-15.8 11.5-20L116.5 1.6z" fill="#539E43"/><text x="128" y="165" textAnchor="middle" fontFamily="Arial,sans-serif" fontSize="110" fontWeight="bold" fill="white">JS</text></svg> },
     { id: 5, name: 'MERN Stack', description: 'MongoDB, Express, React, Node.js full-stack environment', tags: ['Full-Stack', 'MongoDB', 'React'], featured: true,
       logo: <svg width="24" height="24" viewBox="0 0 256 256"><circle cx="128" cy="128" r="128" fill="#61DAFB" fillOpacity="0.1"/><circle cx="128" cy="128" r="18" fill="#61DAFB"/><ellipse cx="128" cy="128" rx="100" ry="38" fill="none" stroke="#61DAFB" strokeWidth="8"/><ellipse cx="128" cy="128" rx="100" ry="38" fill="none" stroke="#61DAFB" strokeWidth="8" transform="rotate(60 128 128)"/><ellipse cx="128" cy="128" rx="100" ry="38" fill="none" stroke="#61DAFB" strokeWidth="8" transform="rotate(120 128 128)"/></svg> },
-    { id: 6, name: 'Java Development', description: 'Java 17 with Maven, Gradle, and code-server IDE', tags: ['Backend', 'Java', 'Maven', 'Gradle'],
+    { id: 6, name: 'Java', description: 'Java 17 with Maven, Gradle, and code-server IDE', tags: ['Backend', 'Java', 'Maven', 'Gradle'],
       logo: <svg width="24" height="24" viewBox="0 0 256 346"><path d="M83 267s-14 8 9 11c28 3 42 3 73-4 0 0 8 5 19 9-68 29-153-2-101-16zm-9-37s-15 11 8 14c30 3 53 3 94-5 0 0 6 5 14 8-82 24-173 2-116-17z" fill="#5382A1"/><path d="M143 116c17 19-4 37-4 37s43-22 23-50c-18-26-32-39 44-84 0 0-119 30-63 97z" fill="#E76F00"/><path d="M233 295s10 8-11 15c-40 12-168 16-203 0-13-5 11-13 18-14 8-2 12-2 12-2-14-10-88 19-38 27 137 22 250-10 222-26zM89 190s-63 15-22 20c17 2 50 2 82-1 26-2 52-7 52-7s-9 4-16 8c-63 17-185 9-150-8 30-14 54-12 54-12zm112 63c64-33 34-66 14-61-5 1-7 2-7 2s2-3 5-4c38-13 67 40-13 61 0 0 1-1 1-2z" fill="#5382A1"/><path d="M162 0s36 36-34 90c-56 44-13 69 0 97-33-29-57-55-41-79C111 73 176 55 162 0z" fill="#E76F00"/><path d="M95 341c62 4 156-2 158-31 0 0-4 11-51 20-53 10-118 9-157 2 0 0 8 7 50 9z" fill="#5382A1"/></svg> }
   ];
 
@@ -569,9 +569,9 @@ const Dashboard = () => {
                         key={template.id}
                         variants={fadeInUp}
                         whileHover={{ y: -3 }}
-                        className="bg-slate-800 border border-slate-700 rounded-xl p-4 hover:border-slate-600 transition-all duration-300"
+                        className="bg-slate-800 border border-slate-700 rounded-xl p-6 hover:border-slate-600 transition-all duration-300"
                       >
-                        <div className="flex items-center space-x-3 mb-3">
+                        <div className="flex items-center space-x-3 mb-5">
                           <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center">
                             {template.logo}
                           </div>
