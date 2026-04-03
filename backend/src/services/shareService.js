@@ -80,7 +80,7 @@ function parseNodePackages(snapshot) {
 
     return [...dependencies, ...devDependencies].map(([name, version]) => `${name}@${version}`);
   } catch (error) {
-    console.warn('⚠️  Could not parse package.json for share preview:', error.message);
+    console.warn('Could not parse package.json for share preview:', error.message);
     return [];
   }
 }
@@ -263,7 +263,7 @@ function generateShareToken() {
  */
 async function createWorkspaceSnapshot(workspaceId, template = 'python') {
   try {
-    console.log(`📸 Creating snapshot for workspace: ${workspaceId}`);
+    console.log(`Creating snapshot for workspace: ${workspaceId}`);
     
     const snapshot = {
       files: [],
@@ -287,7 +287,7 @@ async function createWorkspaceSnapshot(workspaceId, template = 'python') {
     const filesOutput = await dockerService.execInContainer(workspaceId, findCommand);
     const filePaths = filesOutput.trim().split('\n').filter(f => f);
     
-    console.log(`📁 Found ${filePaths.length} files to snapshot`);
+    console.log(`Found ${filePaths.length} files to snapshot`);
 
     // Read each file content
     for (const filePath of filePaths) {
@@ -303,7 +303,7 @@ async function createWorkspaceSnapshot(workspaceId, template = 'python') {
 
         // Skip files larger than 500KB before reading them into memory
         if (size > 500 * 1024) {
-          console.log(`⚠️  Skipping large file: ${filePath} (${size} bytes)`);
+          console.log(`Skipping large file: ${filePath} (${size} bytes)`);
           continue;
         }
 
@@ -321,24 +321,24 @@ async function createWorkspaceSnapshot(workspaceId, template = 'python') {
         snapshot.totalSize += size;
         
       } catch (error) {
-        console.warn(`⚠️  Could not read file ${filePath}:`, error.message);
+        console.warn(`Could not read file ${filePath}:`, error.message);
       }
     }
 
     snapshot.packages = extractPackages(snapshot, template);
 
     if (snapshot.packages.length > 0) {
-      console.log(`📦 Found ${snapshot.packages.length} ${normalizeTemplate(template)} dependencies`);
+      console.log(`Found ${snapshot.packages.length} ${normalizeTemplate(template)} dependencies`);
     } else {
-      console.log(`ℹ️  No additional ${normalizeTemplate(template)} dependencies detected`);
+      console.log(`No additional ${normalizeTemplate(template)} dependencies detected`);
     }
 
-    console.log(`✅ Snapshot created: ${snapshot.files.length} files, ${snapshot.totalSize} bytes`);
+    console.log(`Snapshot created: ${snapshot.files.length} files, ${snapshot.totalSize} bytes`);
     
     return snapshot;
     
   } catch (error) {
-    console.error('❌ Failed to create snapshot:', error);
+    console.error('Failed to create snapshot:', error);
     throw new Error(`Failed to create workspace snapshot: ${error.message}`);
   }
 }
@@ -348,8 +348,8 @@ async function createWorkspaceSnapshot(workspaceId, template = 'python') {
  */
 async function restoreWorkspaceSnapshot(workspaceId, snapshot, template = 'python') {
   try {
-    console.log(`📥 Restoring snapshot to workspace: ${workspaceId}`);
-    console.log(`📁 Restoring ${snapshot.files.length} files`);
+    console.log(`Restoring snapshot to workspace: ${workspaceId}`);
+    console.log(`Restoring ${snapshot.files.length} files`);
 
     // Create directories and restore files
     for (const file of snapshot.files) {
@@ -388,27 +388,27 @@ async function restoreWorkspaceSnapshot(workspaceId, snapshot, template = 'pytho
         throw new Error(`Failed to restore file ${file.path}: ${error.message}`);
       }
 
-      console.log(`✅ Restored: ${file.path}`);
+      console.log(`Restored: ${file.path}`);
     }
 
     const dependencyRestoreCommand = buildDependencyRestoreCommand(snapshot, template);
 
     if (dependencyRestoreCommand) {
-      console.log(`📦 Restoring ${normalizeTemplate(template)} dependencies...`);
+      console.log(`Restoring ${normalizeTemplate(template)} dependencies...`);
       
       try {
         await dockerService.execInContainer(workspaceId, dependencyRestoreCommand);
         
-        console.log(`✅ ${normalizeTemplate(template)} dependencies restored`);
+        console.log(`${normalizeTemplate(template)} dependencies restored`);
       } catch (error) {
         throw new Error(`Failed to install workspace packages: ${error.message}`);
       }
     }
 
-    console.log(`✅ Snapshot restored successfully`);
+    console.log(`Snapshot restored successfully`);
     
   } catch (error) {
-    console.error('❌ Failed to restore snapshot:', error);
+    console.error('Failed to restore snapshot:', error);
     throw new Error(`Failed to restore workspace snapshot: ${error.message}`);
   }
 }

@@ -31,7 +31,7 @@ const AuthCallback = () => {
       }
 
       try {
-        console.log('🔄 Exchanging authorization code for user data...');
+        console.log('Exchanging authorization code for user data...');
         
         // Send code to backend
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/github`, {
@@ -57,21 +57,21 @@ const AuthCallback = () => {
           throw new Error(data.error || 'Authentication failed - no user data');
         }
         
-        console.log('✅ Authentication successful:', data.user?.login);
+        console.log('Authentication successful:', data.user?.login);
 
         // Store user data in localStorage for quick access
         localStorage.setItem('user', JSON.stringify(data.user));
         localStorage.setItem('isLoggedIn', 'true');
 
         // Show success message briefly
-        console.log('🎉 Welcome,', data.user?.name || data.user?.login);
+        console.log('Welcome,', data.user?.name || data.user?.login);
 
         // Redirect to saved URL (e.g. share page) or dashboard
         const redirectTo = localStorage.getItem('redirectAfterLogin');
         localStorage.removeItem('redirectAfterLogin');
         navigate(redirectTo || '/dashboard');
       } catch (error) {
-        console.error('❌ Error during authentication:', error.message);
+        console.error('Error during authentication:', error.message);
         
         // Clear any partial localStorage data on error
         localStorage.removeItem('user');

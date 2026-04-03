@@ -11,7 +11,7 @@ async function getGitHubUser(code) {
   }
 
   try {
-    console.log('🔄 Exchanging GitHub code for access token...');
+    console.log('Exchanging GitHub code for access token...');
     
     // 1. Exchange code for access token
     const tokenResponse = await axios.post(
@@ -24,7 +24,7 @@ async function getGitHubUser(code) {
       { headers: { Accept: "application/json" } }
     );
 
-    console.log('📝 Token response received:', tokenResponse.data);
+    console.log('Token response received:', tokenResponse.data);
 
     const { access_token, error, error_description } = tokenResponse.data;
     
@@ -36,7 +36,7 @@ async function getGitHubUser(code) {
       throw new Error("Failed to retrieve access token from GitHub");
     }
 
-    console.log('🔑 Access token obtained successfully');
+    console.log('Access token obtained successfully');
 
     // 2. Fetch GitHub user profile
     const userResponse = await axios.get("https://api.github.com/user", {
@@ -44,7 +44,7 @@ async function getGitHubUser(code) {
     });
 
     const githubData = userResponse.data;
-    console.log('👤 GitHub user data fetched:', githubData.login);
+    console.log('GitHub user data fetched:', githubData.login);
 
     // 3. Find or create user in database
     let user = await User.findOne({ githubId: githubData.id.toString() });
@@ -61,7 +61,7 @@ async function getGitHubUser(code) {
         location: githubData.location
       });
 
-      console.log('✅ New user created:', user.login);
+      console.log('New user created:', user.login);
 
       // Log activity
       await Activity.create({
@@ -79,7 +79,7 @@ async function getGitHubUser(code) {
       user.location = githubData.location;
       await user.save();
 
-      console.log('✅ User logged in:', user.login);
+      console.log('User logged in:', user.login);
 
       // Log activity
       await Activity.create({
@@ -101,8 +101,8 @@ async function getGitHubUser(code) {
     };
 
   } catch (error) {
-    console.error('❌ GitHub OAuth Service Error:', error.message);
-    console.error('❌ Full error details:', {
+    console.error('GitHub OAuth Service Error:', error.message);
+    console.error('Full error details:', {
       message: error.message,
       status: error.response?.status,
       statusText: error.response?.statusText,
@@ -115,7 +115,7 @@ async function getGitHubUser(code) {
       // GitHub API error
       const status = error.response.status;
       const data = error.response.data;
-      console.error(`❌ GitHub API Error ${status}:`, data);
+      console.error(`GitHub API Error ${status}:`, data);
       throw new Error(`GitHub API error (${status}): ${data.message || data.error_description || error.message}`);
     } else if (error.message.includes('OAuth')) {
       // OAuth specific error

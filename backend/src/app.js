@@ -57,7 +57,7 @@ app.get('/api/health', (req, res) => {
 
 // Error handler (catch all)
 app.use((err, req, res, next) => {
-  console.error('❌ Error:', err.stack);
+  console.error('Error:', err.stack);
   
   // Mongoose validation error
   if (err.name === 'ValidationError') {

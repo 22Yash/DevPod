@@ -11,7 +11,7 @@ const githubAuth = async (req, res) => {
   }
 
   try {
-    console.log('🔐 Processing GitHub OAuth with code:', code.substring(0, 10) + '...');
+    console.log('Processing GitHub OAuth with code:', code.substring(0, 10) + '...');
     
     const user = await githubService.getGitHubUser(code);
     
@@ -32,7 +32,7 @@ const githubAuth = async (req, res) => {
       email: user.email
     };
 
-    console.log('✅ User authenticated successfully:', user.login);
+    console.log('User authenticated successfully:', user.login);
 
     res.json({
       success: true,
@@ -40,7 +40,7 @@ const githubAuth = async (req, res) => {
       message: 'Authentication successful'
     });
   } catch (error) {
-    console.error("❌ GitHub OAuth Error:", error.message);
+    console.error("GitHub OAuth Error:", error.message);
     
     // Clear any partial session data on error
     if (req.session) {
@@ -89,14 +89,14 @@ const getCurrentUser = async (req, res) => {
       });
     }
     
-    console.log('✅ Current user session found:', req.session.user.login);
+    console.log('Current user session found:', req.session.user.login);
     
     res.json({
       authenticated: true,
       user: req.session.user
     });
   } catch (error) {
-    console.error('❌ Get current user error:', error.message);
+    console.error('Get current user error:', error.message);
     res.status(500).json({ error: error.message });
   }
 };
@@ -106,11 +106,11 @@ const logout = (req, res) => {
   
   req.session.destroy((err) => {
     if (err) {
-      console.error('❌ Logout error:', err.message);
+      console.error('Logout error:', err.message);
       return res.status(500).json({ error: 'Logout failed' });
     }
     
-    console.log('👋 User logged out:', userLogin);
+    console.log('User logged out:', userLogin);
     res.clearCookie('connect.sid');
     res.json({ message: 'Logged out successfully' });
   });

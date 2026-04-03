@@ -151,7 +151,7 @@ EOF`
             await container.inspect();
         } catch (error) {
             if (isDockerNotFoundError(error)) {
-                console.log(`ℹ️  Container already absent: ${containerName}`);
+                console.log(`Container already absent: ${containerName}`);
                 return;
             }
 
@@ -160,25 +160,25 @@ EOF`
 
         try {
             await container.stop();
-            console.log(`🛑 Container stopped: ${containerName}`);
+            console.log(`Container stopped: ${containerName}`);
         } catch (error) {
             if (isDockerNotFoundError(error)) {
-                console.log(`ℹ️  Container already absent while stopping: ${containerName}`);
+                console.log(`Container already absent while stopping: ${containerName}`);
                 return;
             }
 
-            console.log(`⚠️  Container stop skipped for ${containerName}: ${error.message}`);
+            console.log(`Container stop skipped for ${containerName}: ${error.message}`);
         }
 
         try {
             await container.remove({ force: true });
-            console.log(`🗑️  Container removed: ${containerName}`);
+            console.log(`Container removed: ${containerName}`);
         } catch (error) {
             if (!isDockerNotFoundError(error)) {
                 throw error;
             }
 
-            console.log(`ℹ️  Container already removed: ${containerName}`);
+            console.log(`Container already removed: ${containerName}`);
         }
     }
 
@@ -190,7 +190,7 @@ EOF`
             await volume.inspect();
         } catch (error) {
             if (isDockerNotFoundError(error)) {
-                console.log(`ℹ️  Volume already absent: ${volumeName}`);
+                console.log(`Volume already absent: ${volumeName}`);
                 return;
             }
 
@@ -199,13 +199,13 @@ EOF`
 
         try {
             await volume.remove();
-            console.log(`🗑️  Volume removed: ${volumeName}`);
+            console.log(`Volume removed: ${volumeName}`);
         } catch (error) {
             if (!isDockerNotFoundError(error)) {
                 throw error;
             }
 
-            console.log(`ℹ️  Volume already removed: ${volumeName}`);
+            console.log(`Volume already removed: ${volumeName}`);
         }
     }
 
@@ -223,7 +223,7 @@ EOF`
         for (let i = 0; i < configs.length; i++) {
             const config = configs[i];
             try {
-                console.log(`🔄 Trying Docker config ${i + 1}/${configs.length}:`, config);
+                console.log(`Trying Docker config ${i + 1}/${configs.length}:`, config);
                 const testDocker = new Docker(config);
 
                 let timeoutId;
@@ -239,10 +239,10 @@ EOF`
                 }
                 
                 docker = testDocker;
-                console.log(`✅ Docker connected successfully with config ${i + 1}:`, config);
+                console.log(`Docker connected successfully with config ${i + 1}:`, config);
                 return docker;
             } catch (error) {
-                console.log(`❌ Config ${i + 1} failed:`, error.message);
+                console.log(`Config ${i + 1} failed:`, error.message);
             }
         }
         
@@ -254,7 +254,7 @@ EOF`
      */
     async function ensureDockerImage(imageName) {
         try {
-            console.log(`🔍 Checking if image exists: ${imageName}`);
+            console.log(`Checking if image exists: ${imageName}`);
             
             const images = await docker.listImages();
             const imageExists = images.some(img => 
@@ -262,7 +262,7 @@ EOF`
             );
             
             if (!imageExists) {
-                console.log(`🔨 Building custom image: ${imageName}`);
+                console.log(`Building custom image: ${imageName}`);
                 
                 const path = require('path');
                 const repoRoot = path.resolve(__dirname, '..', '..', '..');
@@ -273,7 +273,7 @@ EOF`
                 else if (imageName.includes('java')) dockerfilePath = path.join(repoRoot, 'docker', 'java');
                 else throw new Error(`Unknown template for image: ${imageName}`);
                 
-                console.log(`🔨 Building from: ${dockerfilePath}`);
+                console.log(`Building from: ${dockerfilePath}`);
                 
                 const buildStream = await docker.buildImage({
                     context: dockerfilePath,
@@ -286,17 +286,17 @@ EOF`
                 await new Promise((resolve, reject) => {
                     docker.modem.followProgress(buildStream, (err) => {
                         if (err) return reject(err);
-                        console.log(`✅ Image built successfully: ${imageName}`);
+                        console.log(`Image built successfully: ${imageName}`);
                         resolve();
                     }, (event) => {
-                        if (event.stream) console.log(`📦 Build: ${event.stream.trim()}`);
+                        if (event.stream) console.log(`Build: ${event.stream.trim()}`);
                     });
                 });
             } else {
-                console.log(`✅ Image already exists: ${imageName}`);
+                console.log(`Image already exists: ${imageName}`);
             }
         } catch (error) {
-            console.error(`❌ Failed to ensure image ${imageName}:`, error.message);
+            console.error(`Failed to ensure image ${imageName}:`, error.message);
             throw error;
         }
     }
@@ -305,14 +305,14 @@ EOF`
      * Launches a new code-server container for a user workspace.
      */
     async function launchWorkspace(userId, template, workspaceId, options = {}) {
-        console.log(`🚀 Launching workspace: ${workspaceId}, template: ${template}`);
+        console.log(`Launching workspace: ${workspaceId}, template: ${template}`);
         let volumeCreated = false;
 
         try {
             const client = await ensureDockerClient();
 
             await client.ping();
-            console.log('✅ Docker daemon is accessible');
+            console.log('Docker daemon is accessible');
 
             const imageName = TEMPLATE_IMAGES[template];
             if (!imageName) {
@@ -330,15 +330,15 @@ EOF`
             const volumeName = `devpod-${workspaceId}`;
             try {
                 await client.createVolume({ Name: volumeName });
-                console.log(`✅ Volume created: ${volumeName}`);
+                console.log(`Volume created: ${volumeName}`);
                 volumeCreated = true;
             } catch (e) {
                 if (!e.message.includes("already exists")) throw e;
-                console.log(`⚠️  Volume already exists: ${volumeName}`);
+                console.log(`Volume already exists: ${volumeName}`);
                 volumeCreated = true;
             }
 
-            console.log('🔧 Creating container with config:', {
+            console.log('Creating container with config:', {
                 Image: imageName,
                 ExposedPorts: config.ExposedPorts,
                 PortBindings: config.hostConfig.PortBindings,
@@ -374,24 +374,24 @@ EOF`
                 },
             });
 
-            console.log(`📦 Container created: ${container.id}`);
+            console.log(`Container created: ${container.id}`);
             await container.start();
-            console.log(`✅ Container started`);
+            console.log(`Container started`);
 
             // Wait for ports to bind
             await new Promise(resolve => setTimeout(resolve, 2000));
 
             const info = await container.inspect();
-            console.log('📊 Port mappings:', JSON.stringify(info.NetworkSettings.Ports, null, 2));
+            console.log('Port mappings:', JSON.stringify(info.NetworkSettings.Ports, null, 2));
 
             const result = buildWorkspaceAccessResult(container.id, info);
 
-            console.log(`✅ Workspace launched - IDE: ${result.ideUrl}`);
+            console.log(`Workspace launched - IDE: ${result.ideUrl}`);
             if (result.frontendUrl) {
-                console.log(`✅ MERN frontend published at: ${result.frontendUrl}`);
+                console.log(`MERN frontend published at: ${result.frontendUrl}`);
             }
             if (result.backendUrl) {
-                console.log(`✅ MERN backend published at: ${result.backendUrl}`);
+                console.log(`MERN backend published at: ${result.backendUrl}`);
             }
 
             // Configure Git credentials inside the container
@@ -407,9 +407,9 @@ EOF`
                         await execInContainer(workspaceId, ['git', 'config', '--global', 'user.name', name]);
                         await execInContainer(workspaceId, ['git', 'config', '--global', 'user.email', email]);
                     }
-                    console.log('✅ Git credentials configured in workspace');
+                    console.log('Git credentials configured in workspace');
                 } catch (err) {
-                    console.warn(`⚠️  Could not configure Git credentials: ${err.message}`);
+                    console.warn(`Could not configure Git credentials: ${err.message}`);
                 }
             }
 
@@ -424,11 +424,11 @@ EOF`
                 try {
                     await deleteWorkspace(workspaceId);
                 } catch (cleanupError) {
-                    console.warn(`⚠️  Failed to clean up partially launched workspace ${workspaceId}: ${cleanupError.message}`);
+                    console.warn(`Failed to clean up partially launched workspace ${workspaceId}: ${cleanupError.message}`);
                 }
             }
 
-            console.error(`❌ Failed to launch workspace ${workspaceId}:`, error.message);
+            console.error(`Failed to launch workspace ${workspaceId}:`, error.message);
             throw error;
         }
     }
@@ -441,9 +441,9 @@ EOF`
             const client = await ensureDockerClient();
             const container = client.getContainer(`devpod-${workspaceId}`);
             await container.stop();
-            console.log(`🛑 Workspace stopped: ${workspaceId}`);
+            console.log(`Workspace stopped: ${workspaceId}`);
         } catch (error) {
-            console.error(`❌ Failed to stop workspace ${workspaceId}:`, error.message);
+            console.error(`Failed to stop workspace ${workspaceId}:`, error.message);
             throw error;
         }
     }
@@ -456,7 +456,7 @@ EOF`
             const client = await ensureDockerClient();
             const container = client.getContainer(`devpod-${workspaceId}`);
             await container.start();
-            console.log(`▶️  Workspace resumed: ${workspaceId}`);
+            console.log(`Workspace resumed: ${workspaceId}`);
             
             await new Promise(resolve => setTimeout(resolve, 2000));
             
@@ -469,7 +469,7 @@ EOF`
 
             return result;
         } catch (error) {
-            console.error(`❌ Failed to resume workspace ${workspaceId}:`, error.message);
+            console.error(`Failed to resume workspace ${workspaceId}:`, error.message);
             throw error;
         }
     }
@@ -483,7 +483,7 @@ EOF`
             await removeContainerByName(resourceName);
             await removeVolumeByName(resourceName);
         } catch (error) {
-            console.error(`❌ Failed to delete workspace ${workspaceId}:`, error.message);
+            console.error(`Failed to delete workspace ${workspaceId}:`, error.message);
             throw error;
         }
     }
@@ -518,7 +518,7 @@ EOF`
                 prefix,
             };
         } catch (error) {
-            console.error(`❌ Failed to reset Docker demo resources for prefix ${prefix}:`, error.message);
+            console.error(`Failed to reset Docker demo resources for prefix ${prefix}:`, error.message);
             throw error;
         }
     }
@@ -582,14 +582,14 @@ EOF`
                 stream.on('error', rejectOnce);
             });
         } catch (error) {
-            console.error(`❌ Failed to execute command in ${workspaceId}:`, error.message);
+            console.error(`Failed to execute command in ${workspaceId}:`, error.message);
             throw error;
         }
     }
 
     // Initialize Docker on module load
     initializeDocker().catch(error => {
-        console.error('❌ Docker initialization failed:', error.message);
+        console.error('Docker initialization failed:', error.message);
     });
 
     module.exports = {

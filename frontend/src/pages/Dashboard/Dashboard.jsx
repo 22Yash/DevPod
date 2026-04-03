@@ -342,7 +342,7 @@ const Dashboard = () => {
           <motion.div variants={fadeInUp} className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-3xl font-bold mb-2">
-                Welcome back, {user?.name || user?.login || "Developer"} 👋
+                Welcome back, {user?.name || user?.login || "Developer"}
               </h1>
               <p className="text-slate-300">Ready to build something amazing today?</p>
             </div>

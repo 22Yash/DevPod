@@ -46,7 +46,7 @@ const shareController = {
       }
 
       // Create snapshot
-      console.log(`📸 Creating snapshot for workspace: ${workspaceId}`);
+      console.log(`Creating snapshot for workspace: ${workspaceId}`);
       const snapshot = await shareService.createWorkspaceSnapshot(workspaceId, workspace.template);
 
       // Check snapshot size (limit to 10MB)
@@ -234,8 +234,8 @@ const shareController = {
       // Generate new workspace ID
       newWorkspaceId = `${req.session.userId}-${shareSnapshot.template}-${Date.now()}`;
 
-      console.log(`🔄 Cloning workspace from share: ${shareToken}`);
-      console.log(`📦 New workspace ID: ${newWorkspaceId}`);
+      console.log(`Cloning workspace from share: ${shareToken}`);
+      console.log(`New workspace ID: ${newWorkspaceId}`);
 
       // Launch new container
       const containerInfo = await dockerService.launchWorkspace(
