@@ -50,3 +50,4 @@ coverage/
 # Docker-specific (optional - remove if you want to track these)
 # docker/*/node_modules/
 
+.claude

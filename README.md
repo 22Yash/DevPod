@@ -1,28 +1,71 @@
 # DevPod
 
-Cloud workspace demo app with a React frontend, an Express/Mongo backend, and Docker-managed developer environments.
+Cloud development environment platform. Launch browser-based IDEs from templates, share workspaces, and push to GitHub — all from the browser.
 
-## Start Here
+**Live:** [https://mydevpod.me](https://mydevpod.me)
 
-- Demo/operator flow: [DEMO.md](/Users/bharatmac/Folders/Code/DevPod/DEMO.md)
-- Setup navigation: [START-HERE.md](/Users/bharatmac/Folders/Code/DevPod/docs/setup/START-HERE.md)
-- Setup guide: [TEAM-SETUP-GUIDE.md](/Users/bharatmac/Folders/Code/DevPod/docs/setup/TEAM-SETUP-GUIDE.md)
+## Tech Stack
+
+- **Frontend:** React 19, Vite, Tailwind CSS, Framer Motion
+- **Backend:** Express 5, MongoDB (Mongoose), express-session
+- **Workspaces:** Docker containers running code-server (browser-based VS Code)
+- **Auth:** GitHub OAuth 2.0
+- **Deployment:** DigitalOcean, Nginx, Let's Encrypt SSL
+
+## Features
+
+- One-click workspace launch (Python, Node.js, MERN Stack, Java)
+- Browser-based VS Code IDE with full terminal
+- Workspace sharing via link — clone any shared workspace
+- Git integration — push, pull, clone using your GitHub account inside workspaces
+- MERN workspaces with working frontend/backend dev servers
+- Persistent storage via Docker volumes
 
 ## Repo Layout
 
-- [backend](/Users/bharatmac/Folders/Code/DevPod/backend): Express API, Mongo models, Docker/workspace orchestration
-- [backend/scripts](/Users/bharatmac/Folders/Code/DevPod/backend/scripts): demo reset and backend-only debug helpers
-- [frontend](/Users/bharatmac/Folders/Code/DevPod/frontend): React/Vite app
-- [docker](/Users/bharatmac/Folders/Code/DevPod/docker): workspace images and templates
-- [docs](/Users/bharatmac/Folders/Code/DevPod/docs): setup, build, sharing, and archived project documentation
-- [scripts](/Users/bharatmac/Folders/Code/DevPod/scripts): build and setup entrypoints
+```
+backend/          Express API, MongoDB models, Docker orchestration
+frontend/         React/Vite app
+docker/
+  python/         Python workspace Dockerfile
+  nodejs/         Node.js workspace Dockerfile
+  mern-template/  MERN stack workspace (frontend + backend + code-server)
+  java/           Java workspace Dockerfile
+docs/             Setup, build, and sharing documentation
+scripts/build/    Docker image build scripts
+```
 
-## Common Commands
+## Local Development
 
-- Start backend: `npm run server --prefix backend`
-- Start frontend: `npm run dev --prefix frontend`
-- Reset demo state: `npm run demo:reset`
-- Build Docker images: `./scripts/build/build-images.sh`
-- Build Docker images on Windows: `scripts\\build\\build-images.bat`
-- Build frontend: `npm run build --prefix frontend`
-- Run backend tests: `npm test -- --runInBand --prefix backend`
+```bash
+# Backend
+cd backend && npm install
+cp .env.example .env  # configure env vars
+npm run server
+
+# Frontend
+cd frontend && npm install
+npm run dev
+
+# Build Docker images
+./scripts/build/build-images.sh
+```
+
+## Environment Variables
+
+### Backend (.env)
+```
+MONGODB_URI=mongodb+srv://...
+GITHUB_CLIENT_ID=...
+GITHUB_CLIENT_SECRET=...
+SESSION_SECRET=...
+FRONTEND_URL=http://localhost:5173
+PORT=4000
+```
+
+### Frontend (.env)
+```
+VITE_API_URL=http://localhost:4000
+VITE_GITHUB_CLIENT_ID=...
+VITE_GITHUB_CALLBACK_URL=http://localhost:5173/auth/callback
+```
