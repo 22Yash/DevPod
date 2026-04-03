@@ -23,6 +23,9 @@ WORKDIR /workspace
 COPY welcome.go /workspace/welcome.go
 
 ENV SHELL=/bin/bash
+ENV PATH="/usr/local/go/bin:/go/bin:${PATH}"
+ENV GOPATH="/go"
+RUN echo 'export PATH="/usr/local/go/bin:/go/bin:$PATH"' >> /etc/bash.bashrc
 
 EXPOSE 8080
 
