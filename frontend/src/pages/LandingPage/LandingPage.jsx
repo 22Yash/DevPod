@@ -28,7 +28,7 @@ const handleGitHubLogin = () => {
   
   if (!GITHUB_CLIENT_ID) {
     console.error('GitHub Client ID not configured');
-    alert('GitHub authentication not configured. Please check environment variables.');
+    console.error('GitHub authentication not configured. Please check environment variables.');
     return;
   }
   

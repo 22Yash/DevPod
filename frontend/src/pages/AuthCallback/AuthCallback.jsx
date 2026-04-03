@@ -18,14 +18,14 @@ const AuthCallback = () => {
       // Handle OAuth errors from GitHub
       if (error) {
         console.error('GitHub OAuth error:', error, errorDescription);
-        alert(`Authentication failed: ${errorDescription || error}`);
+        console.error(`Authentication failed: ${errorDescription || error}`);
         navigate('/');
         return;
       }
 
       if (!code) {
         console.error('No authorization code found in callback URL');
-        alert('Authentication failed: No authorization code received from GitHub');
+        console.error('Authentication failed: No authorization code received from GitHub');
         navigate('/');
         return;
       }
@@ -82,7 +82,7 @@ const AuthCallback = () => {
           ? 'Network error. Please check your connection and try again.'
           : error.message;
           
-        alert(`Authentication failed: ${errorMessage}`);
+        console.error(`Authentication failed: ${errorMessage}`);
         navigate('/');
       }
     };

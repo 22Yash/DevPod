@@ -8,11 +8,15 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ShareWorkspaceModal from '../../components/ShareWorkspaceModal';
+import { useToast } from '../../components/Toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 const SHAREABLE_TEMPLATES = new Set(['python', 'nodejs', 'java']);
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [activeTab, setActiveTab] = useState('workspaces');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -117,7 +121,7 @@ const Dashboard = () => {
     else if (template.name.includes('MERN')) templateKey = 'mern';
     else if (template.name.includes('Java')) templateKey = 'java';
     else {
-      alert(`Template ${template.name} is not configured.`);
+      toast(`Template ${template.name} is not configured.`, 'error');
       setLaunchingTemplateId(null);
       return;
     }
@@ -141,13 +145,13 @@ const Dashboard = () => {
       if (!response.ok) {
         if (response.status === 401) {
           closePendingIdeTab(ideTab);
-          alert('Session expired. Please login again.');
+          toast('Session expired. Please login again.', 'error');
           navigate('/');
           return;
         }
         closePendingIdeTab(ideTab);
         const errorMsg = data.message || data.error || `Server error (${response.status})`;
-        alert(`Failed to launch workspace: ${errorMsg}`);
+        toast(`Failed to launch workspace: ${errorMsg}`, 'error');
         return;
       }
 
@@ -162,7 +166,7 @@ const Dashboard = () => {
     } catch (error) {
       closePendingIdeTab(ideTab);
       console.error("Failed to launch DevPod:", error);
-      alert(`Failed to start workspace: ${error.message}`);
+      toast(`Failed to start workspace: ${error.message}`, 'error');
     } finally {
       setLaunchingTemplateId(null);
     }
@@ -181,7 +185,7 @@ const Dashboard = () => {
       }
       await loadDashboardData();
     } catch (error) {
-      alert(`Failed to stop workspace: ${error.message}`);
+      toast(`Failed to stop workspace: ${error.message}`, 'error');
     } finally {
       setActionLoading(null);
     }
@@ -208,16 +212,15 @@ const Dashboard = () => {
       await loadDashboardData();
     } catch (error) {
       closePendingIdeTab(ideTab);
-      alert(`Failed to start workspace: ${error.message}`);
+      toast(`Failed to start workspace: ${error.message}`, 'error');
     } finally {
       setActionLoading(null);
     }
   };
 
   const deleteWorkspace = async (workspaceId, workspaceName) => {
-    if (!confirm(`Are you sure you want to delete "${workspaceName}"? This cannot be undone.`)) {
-      return;
-    }
+    const confirmed = await confirm(`Are you sure you want to delete "${workspaceName}"? This cannot be undone.`);
+    if (!confirmed) return;
     setActionLoading(workspaceId);
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/workspaces/${workspaceId}`, {
@@ -230,7 +233,7 @@ const Dashboard = () => {
       }
       await loadDashboardData();
     } catch (error) {
-      alert(`Failed to delete workspace: ${error.message}`);
+      toast(`Failed to delete workspace: ${error.message}`, 'error');
     } finally {
       setActionLoading(null);
     }
