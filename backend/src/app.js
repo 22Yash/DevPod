@@ -1,5 +1,7 @@
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 const session = require("express-session");
 const MongoStore = require("connect-mongo");
 const connectDB = require("./config/database");
@@ -15,8 +17,19 @@ app.set('trust proxy', 1);
 // Connect to MongoDB
 connectDB();
 
+// Security headers
+app.use(helmet());
+
+// Rate limiting — 100 requests per 15 minutes per IP
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+}));
+
 // Middleware
-app.use(cors({ 
+app.use(cors({
   origin: process.env.FRONTEND_URL || "http://localhost:5173",
   credentials: true // Important for cookies/sessions
 }));
