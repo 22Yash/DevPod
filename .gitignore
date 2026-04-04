@@ -51,3 +51,9 @@ coverage/
 # docker/*/node_modules/
 
 .claude
+
+# Playwright
+tests/.auth/
+tests/auth.config.json
+playwright-report/
+test-results/

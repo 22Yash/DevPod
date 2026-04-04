@@ -1,0 +1,13 @@
+{
+  "name": "devpod",
+  "private": true,
+  "scripts": {
+    "test": "npx playwright test",
+    "test:report": "npx playwright show-report",
+    "test:api": "npx playwright test tests/api/",
+    "test:e2e": "npx playwright test tests/e2e/"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1"
+  }
+}
