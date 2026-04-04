@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const dockerService = require('./dockerService');
 
-const SHAREABLE_TEMPLATES = new Set(['python', 'nodejs', 'java']);
+const SHAREABLE_TEMPLATES = new Set(['python', 'nodejs', 'java', 'blank']);
 const SNAPSHOT_EXCLUDE_PATTERNS = [
   '*/.git/*',
   '*/node_modules/*',
@@ -56,6 +56,7 @@ function readSnapshotTextFile(snapshot, relativePaths) {
 }
 
 function parsePythonPackages(snapshot) {
+  // Fallback: read from requirements.txt if pip freeze wasn't available
   const requirementsContent = readSnapshotTextFile(snapshot, '/requirements.txt');
   if (!requirementsContent) {
     return [];
@@ -65,6 +66,17 @@ function parsePythonPackages(snapshot) {
     .split('\n')
     .map((line) => line.trim())
     .filter((line) => line && !line.startsWith('#'));
+}
+
+async function getPythonPackagesLive(workspaceId) {
+  try {
+    const output = await dockerService.execInContainer(workspaceId, [
+      'sh', '-c', 'pip freeze 2>/dev/null'
+    ]);
+    return output.trim().split('\n').filter((line) => line && !line.startsWith('#'));
+  } catch {
+    return [];
+  }
 }
 
 function parseNodePackages(snapshot) {
@@ -133,9 +145,13 @@ function parseJavaPackages(snapshot) {
   return [];
 }
 
-function extractPackages(snapshot, template) {
+async function extractPackages(snapshot, template, workspaceId) {
   switch (normalizeTemplate(template)) {
     case 'python':
+      if (workspaceId) {
+        const livePackages = await getPythonPackagesLive(workspaceId);
+        if (livePackages.length > 0) return livePackages;
+      }
       return parsePythonPackages(snapshot);
     case 'nodejs':
       return parseNodePackages(snapshot);
@@ -325,7 +341,7 @@ async function createWorkspaceSnapshot(workspaceId, template = 'python') {
       }
     }
 
-    snapshot.packages = extractPackages(snapshot, template);
+    snapshot.packages = await extractPackages(snapshot, template, workspaceId);
 
     if (snapshot.packages.length > 0) {
       console.log(`Found ${snapshot.packages.length} ${normalizeTemplate(template)} dependencies`);

@@ -11,7 +11,7 @@ import ShareWorkspaceModal from '../../components/ShareWorkspaceModal';
 import { useToast } from '../../components/Toast';
 import { useConfirm } from '../../components/ConfirmDialog';
 
-const SHAREABLE_TEMPLATES = new Set(['python', 'nodejs', 'java']);
+const SHAREABLE_TEMPLATES = new Set(['python', 'nodejs', 'java', 'blank']);
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -120,6 +120,7 @@ const Dashboard = () => {
     else if (template.name.includes('Node.js')) templateKey = 'nodejs';
     else if (template.name.includes('MERN')) templateKey = 'mern';
     else if (template.name.includes('Java')) templateKey = 'java';
+    else if (template.name.includes('Custom')) templateKey = 'blank';
     else {
       toast(`Template ${template.name} is not configured.`, 'error');
       setLaunchingTemplateId(null);
@@ -247,7 +248,9 @@ const Dashboard = () => {
     { id: 5, name: 'MERN Stack', description: 'MongoDB, Express, React, Node.js full-stack environment', tags: ['Full-Stack', 'MongoDB', 'React'], featured: true,
       logo: <svg width="24" height="24" viewBox="0 0 256 256"><circle cx="128" cy="128" r="128" fill="#61DAFB" fillOpacity="0.1"/><circle cx="128" cy="128" r="18" fill="#61DAFB"/><ellipse cx="128" cy="128" rx="100" ry="38" fill="none" stroke="#61DAFB" strokeWidth="8"/><ellipse cx="128" cy="128" rx="100" ry="38" fill="none" stroke="#61DAFB" strokeWidth="8" transform="rotate(60 128 128)"/><ellipse cx="128" cy="128" rx="100" ry="38" fill="none" stroke="#61DAFB" strokeWidth="8" transform="rotate(120 128 128)"/></svg> },
     { id: 6, name: 'Java', description: 'Java 17 with Maven, Gradle, and code-server IDE', tags: ['Backend', 'Java', 'Maven', 'Gradle'],
-      logo: <svg width="24" height="24" viewBox="0 0 256 346"><path d="M83 267s-14 8 9 11c28 3 42 3 73-4 0 0 8 5 19 9-68 29-153-2-101-16zm-9-37s-15 11 8 14c30 3 53 3 94-5 0 0 6 5 14 8-82 24-173 2-116-17z" fill="#5382A1"/><path d="M143 116c17 19-4 37-4 37s43-22 23-50c-18-26-32-39 44-84 0 0-119 30-63 97z" fill="#E76F00"/><path d="M233 295s10 8-11 15c-40 12-168 16-203 0-13-5 11-13 18-14 8-2 12-2 12-2-14-10-88 19-38 27 137 22 250-10 222-26zM89 190s-63 15-22 20c17 2 50 2 82-1 26-2 52-7 52-7s-9 4-16 8c-63 17-185 9-150-8 30-14 54-12 54-12zm112 63c64-33 34-66 14-61-5 1-7 2-7 2s2-3 5-4c38-13 67 40-13 61 0 0 1-1 1-2z" fill="#5382A1"/><path d="M162 0s36 36-34 90c-56 44-13 69 0 97-33-29-57-55-41-79C111 73 176 55 162 0z" fill="#E76F00"/><path d="M95 341c62 4 156-2 158-31 0 0-4 11-51 20-53 10-118 9-157 2 0 0 8 7 50 9z" fill="#5382A1"/></svg> }
+      logo: <svg width="24" height="24" viewBox="0 0 256 346"><path d="M83 267s-14 8 9 11c28 3 42 3 73-4 0 0 8 5 19 9-68 29-153-2-101-16zm-9-37s-15 11 8 14c30 3 53 3 94-5 0 0 6 5 14 8-82 24-173 2-116-17z" fill="#5382A1"/><path d="M143 116c17 19-4 37-4 37s43-22 23-50c-18-26-32-39 44-84 0 0-119 30-63 97z" fill="#E76F00"/><path d="M233 295s10 8-11 15c-40 12-168 16-203 0-13-5 11-13 18-14 8-2 12-2 12-2-14-10-88 19-38 27 137 22 250-10 222-26zM89 190s-63 15-22 20c17 2 50 2 82-1 26-2 52-7 52-7s-9 4-16 8c-63 17-185 9-150-8 30-14 54-12 54-12zm112 63c64-33 34-66 14-61-5 1-7 2-7 2s2-3 5-4c38-13 67 40-13 61 0 0 1-1 1-2z" fill="#5382A1"/><path d="M162 0s36 36-34 90c-56 44-13 69 0 97-33-29-57-55-41-79C111 73 176 55 162 0z" fill="#E76F00"/><path d="M95 341c62 4 156-2 158-31 0 0-4 11-51 20-53 10-118 9-157 2 0 0 8 7 50 9z" fill="#5382A1"/></svg> },
+    { id: 7, name: 'Custom Environment', description: 'Blank Ubuntu with build tools — install any language yourself', tags: ['Custom', 'Ubuntu', 'Blank'],
+      logo: <svg width="24" height="24" viewBox="0 0 256 256"><rect width="256" height="256" rx="40" fill="#E95420"/><text x="128" y="170" textAnchor="middle" fontFamily="Arial,sans-serif" fontSize="140" fontWeight="bold" fill="white">&gt;_</text></svg> }
   ];
 
   const fadeInUp = {
