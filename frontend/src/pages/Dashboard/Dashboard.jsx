@@ -136,7 +136,7 @@ const Dashboard = () => {
         credentials: 'include',
         body: JSON.stringify({
           template: templateKey,
-          name: `${templateKey}-workspace-${Date.now()}`,
+          name: `${templateKey === 'blank' ? 'custom' : templateKey}-workspace-${Date.now()}`,
           description: `Workspace created from ${template.name} template`
         })
       });
