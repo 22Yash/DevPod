@@ -598,6 +598,22 @@ EOF`
         }
     }
 
+    /**
+     * Returns cumulative CPU usage (nanoseconds) for a running container.
+     * Compare successive samples to detect activity — large delta means user is coding.
+     * Returns null if the container isn't running.
+     */
+    async function getContainerCpuUsage(workspaceId) {
+        try {
+            const client = await ensureDockerClient();
+            const container = client.getContainer(`devpod-${workspaceId}`);
+            const stats = await container.stats({ stream: false });
+            return stats?.cpu_stats?.cpu_usage?.total_usage ?? null;
+        } catch (error) {
+            return null;
+        }
+    }
+
     // Initialize Docker on module load
     initializeDocker().catch(error => {
         console.error('Docker initialization failed:', error.message);
@@ -610,4 +626,5 @@ EOF`
         deleteWorkspace,
         execInContainer,
         resetDemoResources,
+        getContainerCpuUsage,
     };
